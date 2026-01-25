@@ -1,4 +1,10 @@
-import { Booking, CreateBookingRequest, ValidationError } from '../types/booking';
+import {
+  Booking,
+  BookingResponse,
+  CreateBookingRequest,
+  PaymentStatus,
+  ValidationError,
+} from '../types/booking';
 import { ActivityService } from './activity.service';
 import { logger } from '../utils/logger';
 
@@ -76,6 +82,76 @@ export class BookingService {
     const availableCapacity = activity.maxParticipants - totalBookedParticipants;
 
     return Math.max(0, availableCapacity);
+  }
+
+  /**
+   * Retrieves all bookings for a specific user
+   * Returns array of bookings filtered by userId
+   */
+  getAllByUserId(userId: string): Booking[] {
+    return Array.from(this.bookings.values()).filter((booking) => booking.userId === userId);
+  }
+
+  /**
+   * Retrieves a booking by ID
+   * Returns undefined if not found
+   */
+  getById(id: string): Booking | undefined {
+    return this.bookings.get(id);
+  }
+
+  /**
+   * Retrieves a booking by ID and validates it belongs to the user
+   * Throws if booking not found or does not belong to user
+   */
+  getUserBookingById(id: string, userId: string): Booking {
+    const booking = this.getById(id);
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+    if (booking.userId !== userId) {
+      throw new Error('Booking not found');
+    }
+    return booking;
+  }
+
+  /**
+   * Enriches booking with activity information
+   * Returns booking response with activity details
+   */
+  enrichBookingWithActivity(booking: Booking): BookingResponse {
+    const activity = this.activityService.getById(booking.activityId);
+    if (!activity) {
+      throw new Error('Activity not found');
+    }
+
+    return {
+      id: booking.id,
+      activityId: booking.activityId,
+      userId: booking.userId,
+      participants: booking.participants,
+      createdAt: booking.createdAt,
+      activity: {
+        name: activity.name,
+        slug: activity.slug,
+        price: activity.price,
+        date: activity.date,
+        duration: activity.duration,
+        location: activity.location,
+        status: activity.status,
+      },
+      paymentStatus: this.enrichBookingWithPaymentStatus(booking),
+    };
+  }
+
+  /**
+   * Enriches booking with payment status (placeholder for FR5)
+   * Returns default 'pending' status until payment service is implemented
+   */
+  enrichBookingWithPaymentStatus(booking: Booking): PaymentStatus {
+    // Placeholder: return default 'pending' status
+    // TODO: Integrate with payment service when FR5 is implemented
+    return 'pending';
   }
 
   /**
