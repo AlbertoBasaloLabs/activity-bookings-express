@@ -7,12 +7,12 @@
       "description": "Create TypeScript type definitions for booking domain entities, request DTOs, and validation errors.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Create src/types/booking.ts with Booking, CreateBookingRequest, and ValidationError types",
           "description": "Define domain types for booking entity and request DTOs, including id, activityId, userId, participants, and timestamps"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Define Booking interface matching domain requirements with string IDs (not numbers)",
           "description": "Use string IDs to match activity and user ID format (activity-1, user-1, booking-1)"
         }
@@ -23,32 +23,32 @@
       "description": "Implement business logic for booking creation with capacity validation.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Create src/services/booking.service.ts with BookingService class",
           "description": "Implement service with in-memory Map storage for bookings"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Implement create method for booking creation with capacity validation",
           "description": "Create bookings with generated ID, validate capacity, set userId from authenticated user, inject ActivityService dependency"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Implement getBookingsByActivityId method to retrieve all bookings for an activity",
           "description": "Return array of bookings filtered by activityId for capacity calculation"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Implement calculateAvailableCapacity helper method",
           "description": "Calculate available capacity as activity.maxParticipants minus sum of participants from existing bookings"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Implement validateCreate method returning ValidationError arrays",
           "description": "Validate required fields (activityId, participants), data types, activity existence, positive participants, and capacity availability"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Throw appropriate errors for capacity exceeded, activity not found, and validation failures",
           "description": "Return descriptive error messages for different failure scenarios"
         }
@@ -59,17 +59,17 @@
       "description": "Implement Express routes for booking creation endpoint with authentication middleware.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Create src/routes/bookings.ts with booking endpoints",
           "description": "Register route handlers for booking operations"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Implement POST /bookings endpoint with authentication and validation",
           "description": "Create booking, extract userId from JWT token, validate capacity, return booking with HTTP 201"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Handle validation errors with HTTP 400, authentication errors with HTTP 401, activity not found with HTTP 404, and capacity exceeded with HTTP 400",
           "description": "Return structured error responses for all error scenarios"
         }
@@ -80,17 +80,17 @@
       "description": "Register booking routes in the main Express application with authentication middleware.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Import and register bookings router in src/index.ts",
           "description": "Mount /bookings routes in the Express application"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Apply authentication middleware to POST /bookings route",
           "description": "Protect booking creation endpoint with JWT authentication"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Verify server starts correctly and endpoints are accessible",
           "description": "Test that the application runs and routes are registered correctly"
         }

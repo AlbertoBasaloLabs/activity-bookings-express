@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const logger_1 = require("./utils/logger");
 const auth_1 = __importDefault(require("./routes/auth"));
 const activities_1 = __importDefault(require("./routes/activities"));
+const bookings_1 = __importDefault(require("./routes/bookings"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 app.use(express_1.default.json());
@@ -18,6 +19,7 @@ app.get('/health', (req, res) => {
 });
 app.use('/auth', auth_1.default);
 app.use('/activities', activities_1.default);
+app.use('/bookings', bookings_1.default);
 app.listen(PORT, () => {
     logger_1.logger.info('Server', `Running on port ${PORT}`);
 });
