@@ -1,0 +1,21 @@
+import express from 'express';
+import { logger } from './utils/logger';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'ActivityBookings API' });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+app.listen(PORT, () => {
+  logger.info('Server', `Running on port ${PORT}`);
+});
+
+export default app;
