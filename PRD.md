@@ -61,7 +61,7 @@ A backend API system for managing activity bookings where registered users can d
 ### FR5: Payment Processing
 - **Description**: Upon booking creation, users are automatically billed through a mock payment gateway, with payment status tracked (pending, paid, refunded).
 - **Priority**: High
-- **Status**: NotStarted
+- **Status**: Completed
 
 ### FR6: Booking Retrieval
 - **Description**: Users can retrieve their own bookings, and the system provides booking details including activity information, participant count, and payment status.
@@ -98,4 +98,4 @@ A backend API system for managing activity bookings where registered users can d
 ### TR5: Mock Payment Gateway Integration
 - **Description**: Integrate with a mock payment gateway service that simulates payment processing, handling success and failure scenarios.
 - **Priority**: Medium
-- **Status**: NotStarted
+- **Status**: Completed
