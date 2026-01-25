@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { ActivityService } from '../services/activity.service';
-import { CreateActivityRequest, UpdateActivityRequest } from '../types/activity';
+import { ActivityStatus, CreateActivityRequest, UpdateActivityRequest } from '../types/activity';
 import { AuthenticatedRequest } from '../types/auth';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
@@ -134,6 +134,59 @@ router.delete('/:id', authenticateToken, (req: Request, res: Response) => {
       return res.status(403).json({ error: 'You can only delete your own activities' });
     }
     res.status(500).json({ error: 'Failed to delete activity' });
+  }
+});
+
+/**
+ * PATCH /activities/:id/status
+ * Transitions an activity to a new status
+ * Requires authentication and ownership
+ * Returns 200 on success, 400 on invalid transition, 401 on authentication failure, 403 on ownership failure, 404 if not found
+ */
+router.patch('/:id/status', authenticateToken, (req: Request, res: Response) => {
+  const authReq = req as AuthenticatedRequest;
+
+  // Validate request body
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ error: 'Request body must be a valid JSON object' });
+  }
+
+  if (!req.body.status || typeof req.body.status !== 'string') {
+    return res.status(400).json({ error: 'Status field is required and must be a string' });
+  }
+
+  const validStatuses: ActivityStatus[] = ['draft', 'published', 'confirmed', 'sold-out', 'done', 'cancelled'];
+  if (!validStatuses.includes(req.body.status)) {
+    return res.status(400).json({
+      error: `Invalid status. Status must be one of: ${validStatuses.join(', ')}`,
+    });
+  }
+
+  try {
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const activity = activityService.transitionStatus(
+      req.params.id,
+      req.body.status as ActivityStatus,
+      authReq.user.id
+    );
+    res.status(200).json(activity);
+  } catch (error) {
+    logger.error('ActivityRoute', 'Failed to transition activity status', error);
+    if (error instanceof Error) {
+      if (error.message === 'Activity not found') {
+        return res.status(404).json({ error: 'Activity not found' });
+      }
+      if (error.message.includes('Forbidden')) {
+        return res.status(403).json({ error: 'You can only transition your own activities' });
+      }
+      if (error.message.includes('Invalid status transition')) {
+        return res.status(400).json({ error: error.message });
+      }
+    }
+    res.status(500).json({ error: 'Failed to transition activity status' });
   }
 });
 
