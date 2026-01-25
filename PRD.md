@@ -56,7 +56,7 @@ A backend API system for managing activity bookings where registered users can d
 ### FR4: Booking Creation with Capacity Validation
 - **Description**: Users can book activities, but the system prevents bookings that would exceed available seats (maxParticipants minus existing bookings).
 - **Priority**: High
-- **Status**: NotStarted
+- **Status**: Completed
 
 ### FR5: Payment Processing
 - **Description**: Upon booking creation, users are automatically billed through a mock payment gateway, with payment status tracked (pending, paid, refunded).
