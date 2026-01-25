@@ -41,7 +41,7 @@ A backend API system for managing activity bookings where registered users can d
 ### FR1: User Authentication and Management
 - **Description**: Users can register and authenticate using email and password, receiving JWT tokens for subsequent API access.
 - **Priority**: High
-- **Status**: NotStarted
+- **Status**: Completed
 
 ### FR2: Activity Management
 - **Description**: System supports creating, reading, updating, and deleting activities with properties including name, slug, price, date, duration, location, participant thresholds (min/max), and status.
@@ -83,7 +83,7 @@ A backend API system for managing activity bookings where registered users can d
 ### TR2: JWT-based Authentication
 - **Description**: Secure API endpoints using JWT tokens for authentication, with token validation middleware protecting authenticated routes.
 - **Priority**: High
-- **Status**: NotStarted
+- **Status**: Completed
 
 ### TR3: TypeScript Implementation
 - **Description**: All code must be written in TypeScript with strict typing, following the project's TypeScript coding standards and using the client type definitions from the types folder.
