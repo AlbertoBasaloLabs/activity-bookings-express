@@ -1,7 +1,7 @@
 # Minimal Express API with TypeScript Specification
 
 - **Reference**: [PRD](/PRD.md) TR1, TR3.
-- **Issue**: {_to be created_[#ID](URL to the issue)}
+- **Issue**: [F1.issue.json](specs/F1.issue.json)
 - **Status**: Completed
 
 ## Problem Description
@@ -38,18 +38,18 @@ The project needs a minimal Express.js API setup with TypeScript to serve as the
 
 ## Acceptance Criteria
 
-- [ ] THE [System] SHALL have a `package.json` with Express and TypeScript dependencies
-- [ ] THE [System] SHALL have a `tsconfig.json` with strict TypeScript configuration
-- [ ] THE [System] SHALL have a `src/index.ts` file that sets up an Express application
-- [ ] WHEN [a request is made to `/health`] THE [System] SHALL return a JSON response with status "ok"
-- [ ] WHEN [a request is made to `/`] THE [System] SHALL return a JSON response with API information
-- [ ] THE [System] SHALL support JSON request body parsing via Express middleware
-- [ ] THE [System] SHALL start a development server using `npm run dev` command
-- [ ] THE [System] SHALL build TypeScript to JavaScript using `npm run build` command
-- [ ] THE [System] SHALL start a production server using `npm run start` command
-- [ ] THE [System] SHALL use the PORT environment variable or default to 3000
-- [ ] THE [System] SHALL NOT include test dependencies or configuration
-- [ ] THE [System] SHALL NOT include linting dependencies or configuration
+- [x] THE [System] SHALL have a `package.json` with Express and TypeScript dependencies
+- [x] THE [System] SHALL have a `tsconfig.json` with strict TypeScript configuration
+- [x] THE [System] SHALL have a `src/index.ts` file that sets up an Express application
+- [x] WHEN [a request is made to `/health`] THE [System] SHALL return a JSON response with status "ok"
+- [x] WHEN [a request is made to `/`] THE [System] SHALL return a JSON response with API information
+- [x] THE [System] SHALL support JSON request body parsing via Express middleware
+- [x] THE [System] SHALL start a development server using `npm run dev` command
+- [x] THE [System] SHALL build TypeScript to JavaScript using `npm run build` command
+- [x] THE [System] SHALL start a production server using `npm run start` command
+- [x] THE [System] SHALL use the PORT environment variable or default to 3000
+- [x] THE [System] SHALL NOT include test dependencies or configuration
+- [x] THE [System] SHALL NOT include linting dependencies or configuration
 
 ## Implementation Plan
 
@@ -62,27 +62,27 @@ The project needs a minimal Express.js API setup with TypeScript to serve as the
 **Description**: Create the foundational configuration files for the TypeScript Express project.
 
 **Tasks**:
-- [ ] Create `package.json` with Express, TypeScript, `tsx`, and `@types/express` dependencies
-- [ ] Create `tsconfig.json` with strict TypeScript configuration targeting ES2020
-- [ ] Add npm scripts: `dev` (using tsx), `build` (using tsc), `start` (running built app), `typecheck` (type checking only)
+- [x] Create `package.json` with Express, TypeScript, `tsx`, and `@types/express` dependencies
+- [x] Create `tsconfig.json` with strict TypeScript configuration targeting ES2020
+- [x] Add npm scripts: `dev` (using tsx), `build` (using tsc), `start` (running built app), `typecheck` (type checking only)
 
 ### Step 2: Express Application Setup
 
 **Description**: Create the main Express application entry point with basic middleware and routes.
 
 **Tasks**:
-- [ ] Create `src/index.ts` file
-- [ ] Set up Express app with JSON middleware
-- [ ] Implement root endpoint `/` returning API status JSON
-- [ ] Implement health check endpoint `/health` returning status "ok"
-- [ ] Configure server to listen on PORT environment variable or default to 3000
-- [ ] Add basic logging for server startup
+- [x] Create `src/index.ts` file
+- [x] Set up Express app with JSON middleware
+- [x] Implement root endpoint `/` returning API status JSON
+- [x] Implement health check endpoint `/health` returning status "ok"
+- [x] Configure server to listen on PORT environment variable or default to 3000
+- [x] Add basic logging for server startup
 
 ### Step 3: Build Configuration
 
 **Description**: Configure TypeScript build output and ensure production build works correctly.
 
 **Tasks**:
-- [ ] Configure `tsconfig.json` output directory to `dist/`
-- [ ] Ensure `package.json` start script points to compiled JavaScript in `dist/`
-- [ ] Verify build process creates proper directory structure
+- [x] Configure `tsconfig.json` output directory to `dist/`
+- [x] Ensure `package.json` start script points to compiled JavaScript in `dist/`
+- [x] Verify build process creates proper directory structure
