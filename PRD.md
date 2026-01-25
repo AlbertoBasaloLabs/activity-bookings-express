@@ -66,7 +66,7 @@ A backend API system for managing activity bookings where registered users can d
 ### FR6: Booking Retrieval
 - **Description**: Users can retrieve their own bookings, and the system provides booking details including activity information, participant count, and payment status.
 - **Priority**: Medium
-- **Status**: NotStarted
+- **Status**: Completed
 
 ### FR7: Activity Availability Query
 - **Description**: System provides endpoints to check activity availability, showing remaining seats and current booking count.

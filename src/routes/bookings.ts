@@ -11,6 +11,56 @@ const activityService = new ActivityService();
 const bookingService = new BookingService(activityService);
 
 /**
+ * GET /bookings
+ * Retrieves all bookings for the authenticated user
+ * Requires authentication
+ * Returns 200 with array of enriched booking objects, 401 if unauthenticated
+ */
+router.get('/', authenticateToken, (req: Request, res: Response) => {
+  const authReq = req as AuthenticatedRequest;
+
+  try {
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const bookings = bookingService.getAllByUserId(authReq.user.id);
+    const enrichedBookings = bookings.map((booking) => bookingService.enrichBookingWithActivity(booking));
+    res.status(200).json(enrichedBookings);
+  } catch (error) {
+    logger.error('BookingRoute', 'Failed to retrieve bookings', error);
+    res.status(500).json({ error: 'Failed to retrieve bookings' });
+  }
+});
+
+/**
+ * GET /bookings/:id
+ * Retrieves a specific booking by ID for the authenticated user
+ * Requires authentication
+ * Returns 200 with enriched booking object, 401 if unauthenticated, 404 if booking not found or does not belong to user
+ */
+router.get('/:id', authenticateToken, (req: Request, res: Response) => {
+  const authReq = req as AuthenticatedRequest;
+
+  try {
+    if (!authReq.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const bookingId = req.params.id;
+    const booking = bookingService.getUserBookingById(bookingId, authReq.user.id);
+    const enrichedBooking = bookingService.enrichBookingWithActivity(booking);
+    res.status(200).json(enrichedBooking);
+  } catch (error) {
+    logger.error('BookingRoute', 'Failed to retrieve booking', error);
+    if (error instanceof Error && error.message === 'Booking not found') {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    res.status(500).json({ error: 'Failed to retrieve booking' });
+  }
+});
+
+/**
  * POST /bookings
  * Creates a new booking
  * Requires authentication
