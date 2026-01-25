@@ -6,20 +6,24 @@ import {
   ValidationError,
 } from '../types/booking';
 import { ActivityService } from './activity.service';
+import { PaymentService } from './payment.service';
 import { logger } from '../utils/logger';
 
 export class BookingService {
   private bookings = new Map<string, Booking>();
   private nextId = 1;
   private activityService: ActivityService;
+  private paymentService: PaymentService;
 
-  constructor(activityService: ActivityService) {
+  constructor(activityService: ActivityService, paymentService: PaymentService) {
     this.activityService = activityService;
+    this.paymentService = paymentService;
   }
 
   /**
-   * Creates a new booking
-   * Throws if validation fails, activity not found, or capacity exceeded
+   * Creates a new booking.
+   * Charges via mock gateway first; on success creates payment and booking.
+   * Throws if validation fails, activity not found, capacity exceeded, or payment fails.
    */
   create(req: CreateBookingRequest, userId: string): Booking {
     const errors = this.validateCreate(req);
@@ -27,27 +31,37 @@ export class BookingService {
       throw new Error('Validation failed');
     }
 
-    // Check if activity exists
     const activity = this.activityService.getById(req.activityId);
     if (!activity) {
       throw new Error('Activity not found');
     }
 
-    // Check capacity
     const availableCapacity = this.calculateAvailableCapacity(req.activityId);
     if (req.participants > availableCapacity) {
       throw new Error(`Capacity exceeded. Available: ${availableCapacity}, Requested: ${req.participants}`);
     }
 
+    const amount = activity.price * req.participants;
     const bookingId = `booking-${this.nextId++}`;
+
+    const payment = this.paymentService.createForBooking(
+      bookingId,
+      amount,
+      userId,
+      req.activityId
+    );
+
     const now = new Date().toISOString();
+    const paymentStatus: PaymentStatus = 'paid';
 
     const booking: Booking = {
       id: bookingId,
       activityId: req.activityId,
-      userId: userId,
+      userId,
       participants: req.participants,
       createdAt: now,
+      paymentId: payment.id,
+      paymentStatus,
     };
 
     this.bookings.set(bookingId, booking);
@@ -55,6 +69,7 @@ export class BookingService {
       id: bookingId,
       activityId: req.activityId,
       participants: req.participants,
+      paymentId: payment.id,
     });
     return booking;
   }
@@ -131,6 +146,8 @@ export class BookingService {
       userId: booking.userId,
       participants: booking.participants,
       createdAt: booking.createdAt,
+      paymentId: booking.paymentId,
+      paymentStatus: this.enrichBookingWithPaymentStatus(booking),
       activity: {
         name: activity.name,
         slug: activity.slug,
@@ -140,18 +157,15 @@ export class BookingService {
         location: activity.location,
         status: activity.status,
       },
-      paymentStatus: this.enrichBookingWithPaymentStatus(booking),
     };
   }
 
   /**
-   * Enriches booking with payment status (placeholder for FR5)
-   * Returns default 'pending' status until payment service is implemented
+   * Resolves payment status for a booking.
+   * Uses stored paymentStatus when present; otherwise 'pending'.
    */
   enrichBookingWithPaymentStatus(booking: Booking): PaymentStatus {
-    // Placeholder: return default 'pending' status
-    // TODO: Integrate with payment service when FR5 is implemented
-    return 'pending';
+    return booking.paymentStatus ?? 'pending';
   }
 
   /**

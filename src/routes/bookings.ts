@@ -1,6 +1,8 @@
 import { Request, Response, Router } from 'express';
 import { BookingService } from '../services/booking.service';
 import { ActivityService } from '../services/activity.service';
+import { PaymentService } from '../services/payment.service';
+import { MockPaymentGateway } from '../services/mock-payment-gateway';
 import { CreateBookingRequest } from '../types/booking';
 import { AuthenticatedRequest } from '../types/auth';
 import { authenticateToken } from '../middleware/auth.middleware';
@@ -8,7 +10,8 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 const activityService = new ActivityService();
-const bookingService = new BookingService(activityService);
+const paymentService = new PaymentService(new MockPaymentGateway());
+const bookingService = new BookingService(activityService, paymentService);
 
 /**
  * GET /bookings
@@ -88,6 +91,9 @@ router.post('/', authenticateToken, (req: Request, res: Response) => {
       }
       if (error.message.includes('Capacity exceeded')) {
         return res.status(400).json({ error: error.message });
+      }
+      if (error.message === 'Payment could not be processed') {
+        return res.status(402).json({ error: 'Payment could not be processed' });
       }
     }
     res.status(400).json({ error: 'Failed to create booking' });

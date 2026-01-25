@@ -1,3 +1,5 @@
+import type { PaymentStatus } from './payment';
+
 /**
  * Domain entity - represents a booking as stored in the system
  */
@@ -7,6 +9,8 @@ export interface Booking {
   userId: string;
   participants: number;
   createdAt: string;
+  paymentId?: string;
+  paymentStatus?: PaymentStatus;
 }
 
 /**
@@ -17,10 +21,7 @@ export interface CreateBookingRequest {
   participants: number;
 }
 
-/**
- * Payment status type - placeholder for FR5 implementation
- */
-export type PaymentStatus = 'pending' | 'paid' | 'refunded';
+export type { PaymentStatus };
 
 /**
  * Activity information included in booking responses
@@ -44,8 +45,9 @@ export interface BookingResponse {
   userId: string;
   participants: number;
   createdAt: string;
-  activity: BookingActivityInfo;
+  paymentId?: string;
   paymentStatus: PaymentStatus;
+  activity: BookingActivityInfo;
 }
 
 /**
