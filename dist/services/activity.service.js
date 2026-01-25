@@ -239,17 +239,67 @@ class ActivityService {
                 message: 'Min participants must be less than or equal to max participants',
             });
         }
-        // Validate status if provided
+        // Validate status if provided - status changes must go through PATCH /activities/:id/status endpoint
         if (req.status !== undefined) {
-            const validStatuses = ['draft', 'published', 'confirmed', 'sold-out', 'done', 'cancelled'];
-            if (typeof req.status !== 'string' || !validStatuses.includes(req.status)) {
-                errors.push({
-                    field: 'status',
-                    message: `Status must be one of: ${validStatuses.join(', ')}`,
-                });
-            }
+            errors.push({
+                field: 'status',
+                message: 'Status cannot be changed via PUT endpoint. Use PATCH /activities/:id/status to transition status.',
+            });
         }
         return errors;
+    }
+    /**
+     * Returns valid next statuses for a given current status
+     * Useful for error messages and validation
+     */
+    getValidTransitions(currentStatus) {
+        const transitionMap = {
+            draft: ['published'],
+            published: ['confirmed', 'cancelled', 'sold-out'],
+            confirmed: ['done', 'cancelled'],
+            'sold-out': ['confirmed'],
+            done: [], // Terminal state - no transitions allowed
+            cancelled: [], // Terminal state - no transitions allowed
+        };
+        return transitionMap[currentStatus] || [];
+    }
+    /**
+     * Validates if a status transition is allowed
+     * Returns true if transition is valid, false otherwise
+     */
+    isValidStatusTransition(currentStatus, targetStatus) {
+        const validTransitions = this.getValidTransitions(currentStatus);
+        return validTransitions.includes(targetStatus);
+    }
+    /**
+     * Transitions an activity to a new status
+     * Validates the transition and ownership
+     * Throws if validation fails, activity not found, or ownership mismatch
+     */
+    transitionStatus(id, targetStatus, userId) {
+        const activity = this.activities.get(id);
+        if (!activity) {
+            throw new Error('Activity not found');
+        }
+        if (activity.userId !== userId) {
+            throw new Error('Forbidden: You can only transition your own activities');
+        }
+        if (!this.isValidStatusTransition(activity.status, targetStatus)) {
+            const validTransitions = this.getValidTransitions(activity.status);
+            throw new Error(`Invalid status transition from ${activity.status} to ${targetStatus}. Valid transitions are: ${validTransitions.join(', ') || 'none (terminal state)'}`);
+        }
+        const updatedActivity = {
+            ...activity,
+            status: targetStatus,
+            updatedAt: new Date().toISOString(),
+        };
+        this.activities.set(id, updatedActivity);
+        logger_1.logger.info('ActivityService', 'Activity status transitioned', {
+            id,
+            from: activity.status,
+            to: targetStatus,
+        });
+        return updatedActivity;
     }
     /**
      * Generates a URL-friendly slug from a name

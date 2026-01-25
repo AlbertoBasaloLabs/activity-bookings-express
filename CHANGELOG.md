@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-25
+
+### Added
+- Activity status lifecycle management endpoint (`PATCH /activities/:id/status`)
+- Status transition validation logic with controlled lifecycle rules
+- `getValidTransitions` method to retrieve allowed next statuses
+- `isValidStatusTransition` method to validate status transitions
+- `transitionStatus` method for controlled status updates
+- Status transition validation: draft → published → confirmed → done/cancelled
+- Support for sold-out status transitions (published ↔ sold-out ↔ confirmed)
+- Terminal state enforcement (done and cancelled cannot transition to other statuses)
+
+### Changed
+- Updated activity update validation to prevent direct status changes via PUT endpoint
+- Status changes must now go through dedicated PATCH /activities/:id/status endpoint
+
 ## [1.2.0] - 2026-01-25
 
 ### Added
