@@ -1,5 +1,6 @@
 import express from 'express';
 import { logger } from './utils/logger';
+import authRouter from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,8 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+app.use('/auth', authRouter);
 
 app.listen(PORT, () => {
   logger.info('Server', `Running on port ${PORT}`);
