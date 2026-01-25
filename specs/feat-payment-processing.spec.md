@@ -2,7 +2,7 @@
 
 - **Reference**: [PRD](/PRD.md) FR5, TR5.
 - **Issue**: [F5-payment-processing.issue.json](specs/F5-payment-processing.issue.json)
-- **Status**: Draft
+- **Status**: Completed
 
 ## Problem Description
 

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-01-25
+
+### Added
+- Payment processing (FR5): automatic billing on booking creation via mock gateway
+- Payment types (`Payment`, `PaymentStatus`, `MockPaymentGatewayAdapter`, `ChargeContext`, `ChargeResult`)
+- Mock payment gateway (`MockPaymentGateway`) with deterministic failure (amount divisible by 1000)
+- `PaymentService` with `createForBooking`, in-memory payment storage
+- `paymentId` and `paymentStatus` on `Booking` and booking responses
+- HTTP 402 Payment Required when mock gateway rejects charge (no booking created)
+
+### Changed
+- `POST /bookings` charges user before creating booking; 201 response includes `paymentId` and `paymentStatus`
+- `BookingService.create` integrates `PaymentService`; payment failure returns 402
+
 ## [1.5.0] - 2026-01-25
 
 ### Added
