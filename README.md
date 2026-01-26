@@ -15,39 +15,20 @@ A **backend API** for offering bookings to activities by registered users
 - Security is based on simple JWT tokens.
 - Current client specs to use the types from the [types/](types/) folder.
 
-**Node + TypeScript Setup**
-- **Files:** See [package.json](package.json), [tsconfig.json](tsconfig.json), and [src/index.ts](src/index.ts).
-- **Dev server:** Starts with `tsx` and serves JSON on `/`.
-- **Scripts:** `dev`, `build`, `start`, `typecheck` defined in [package.json](package.json).
+[https://github.com/AlbertoBasaloLabs/ActivityBookingsExpress](https://github.com/AlbertoBasaloLabs/ActivityBookingsExpress)
 
 **Quickstart**
-- **Install:**
 
 ```bash
+# Set up the project
 npm install
-```
-
-- **Run dev:**
-
-```bash
+# Run the development server
 npm run dev
-```
-
-- **Build:**
-
-```bash
+# Build the project
 npm run build
-```
-
-- **Start (built app):**
-
-```bash
+# Run the production server
 npm run start
-```
-
-- **Type-check only:**
-
-```bash
+# Type-check only
 npm run typecheck
 ```
 
@@ -58,25 +39,37 @@ The server listens on `http://localhost:3000` and responds with a small JSON pay
 **System**
 - `GET /health` - Health check endpoint
 
-**Rockets**
-- `GET /rockets` - Retrieve all rockets
-- `GET /rockets/:id` - Retrieve a specific rocket by ID
-- `POST /rockets` - Create a new rocket (requires: name, range, capacity)
-- `PUT /rockets/:id` - Update an existing rocket
-- `DELETE /rockets/:id` - Delete a rocket
+**Authentication**
+- `POST /users` - Register a new user (requires: email, username, password, termsAccepted)
+- `POST /login` - Login and receive JWT token (requires: email, password)
 
-**Launches**
-- `GET /launches` - Retrieve all launches
-- `GET /launches/:id` - Retrieve a specific launch by ID
-- `POST /launches` - Create a new launch (requires: rocketId, launchDateTime, price, minPassengers)
-- `PUT /launches/:id` - Update an existing launch
-- `DELETE /launches/:id` - Delete a launch
+**Activities**
+- `GET /activities` - List all activities (supports query parameters: `q`, `slug`, `_sort`, `_order`)
+  - Query parameters:
+    - `q`: Search term (searches in name, location, slug)
+    - `slug`: Filter by exact slug match
+    - `_sort`: Field to sort by (e.g., 'id', 'name', 'date', 'price')
+    - `_order`: Sort order ('asc' or 'desc', defaults to 'asc')
+- `GET /activities/:id` - Get a specific activity by ID
+- `POST /activities` - Create a new activity (authenticated, requires: name, price, date, duration, location, minParticipants, maxParticipants, status)
+- `PUT /activities/:id` - Update an existing activity (authenticated, owner only)
+- `DELETE /activities/:id` - Delete an activity (authenticated, owner only)
+- `PATCH /activities/:id/status` - Transition activity status (authenticated, owner only, requires: status)
 
-**Customers**
-- `GET /customers` - Retrieve all customers
-- `GET /customers/:email` - Retrieve a specific customer by email (URL-encoded)
-- `POST /customers` - Create a new customer (requires: email, name, phone)
-- `PUT /customers/:email` - Update an existing customer
-- `DELETE /customers/:email` - Delete a customer
+**Bookings**
+- `GET /bookings` - Get all bookings for authenticated user (supports query parameter: `activityId`)
+  - Query parameters:
+    - `activityId`: Filter bookings by activity ID
+- `GET /bookings/:id` - Get a specific booking by ID (authenticated, owner only)
+- `POST /bookings` - Create a new booking (authenticated, requires: activityId, participants)
 
 See specifications in [specs/](specs/) folder for detailed API documentation.
+
+--- 
+
+- **Author**: [Alberto Basalo](https://albertobasalo.dev)
+- **Ai Code Academy en Español**: [AI code Academy](https://aicode.academy)
+- **Socials**:
+  - [X](https://x.com/albertobasalo)
+  - [LinkedIn](https://www.linkedin.com/in/albertobasalo/)
+  - [GitHub](https://github.com/albertobasalo)

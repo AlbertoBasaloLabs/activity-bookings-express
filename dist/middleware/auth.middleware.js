@@ -12,7 +12,11 @@ function authenticateToken(req, res, next) {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
     if (!token) {
         logger_1.logger.warn('AuthMiddleware', 'Missing authorization token');
-        res.status(401).json({ error: 'Authentication required. Please provide a valid token.' });
+        const errorResponse = {
+            message: 'Authentication required. Please provide a valid token.',
+            errors: [],
+        };
+        res.status(401).json(errorResponse);
         return;
     }
     try {
@@ -25,6 +29,10 @@ function authenticateToken(req, res, next) {
     }
     catch (error) {
         logger_1.logger.warn('AuthMiddleware', 'Invalid token', error);
-        res.status(401).json({ error: 'Invalid or expired token. Please login again.' });
+        const errorResponse = {
+            message: 'Invalid or expired token. Please login again.',
+            errors: [],
+        };
+        res.status(401).json(errorResponse);
     }
 }

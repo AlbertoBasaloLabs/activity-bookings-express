@@ -1,6 +1,6 @@
 {
   "name": "activity-bookings-express",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "A backend API for managing activity bookings",
   "main": "dist/index.js",
   "scripts": {

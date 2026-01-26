@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { ResourceService } from '../services/resource.service';
+import { ErrorResponse } from '../types/error';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -21,7 +22,11 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', (req: Request, res: Response) => {
   const resource = service.getById(req.params.id);
   if (!resource) {
-    return res.status(404).json({ error: 'Resource not found' });
+    const errorResponse: ErrorResponse = {
+      message: 'Resource not found',
+      errors: [],
+    };
+    return res.status(404).json(errorResponse);
   }
   res.status(200).json(resource);
 });
@@ -34,7 +39,11 @@ router.get('/:id', (req: Request, res: Response) => {
 router.post('/', (req: Request, res: Response) => {
   const errors = service.validate(req.body);
   if (errors.length > 0) {
-    return res.status(400).json({ errors });
+    const errorResponse: ErrorResponse = {
+      message: 'Validation failed',
+      errors,
+    };
+    return res.status(400).json(errorResponse);
   }
 
   try {
@@ -42,7 +51,11 @@ router.post('/', (req: Request, res: Response) => {
     res.status(201).json(created);
   } catch (error) {
     logger.error('ResourceRoute', 'Failed to create resource', error);
-    res.status(400).json({ error: 'Failed to create resource' });
+    const errorResponse: ErrorResponse = {
+      message: 'Failed to create resource',
+      errors: [],
+    };
+    res.status(400).json(errorResponse);
   }
 });
 
@@ -54,7 +67,11 @@ router.post('/', (req: Request, res: Response) => {
 router.put('/:id', (req: Request, res: Response) => {
   const errors = service.validateUpdate(req.params.id, req.body);
   if (errors.length > 0) {
-    return res.status(400).json({ errors });
+    const errorResponse: ErrorResponse = {
+      message: 'Validation failed',
+      errors,
+    };
+    return res.status(400).json(errorResponse);
   }
 
   try {
@@ -62,7 +79,11 @@ router.put('/:id', (req: Request, res: Response) => {
     res.status(200).json(updated);
   } catch (error) {
     logger.error('ResourceRoute', 'Failed to update resource', error);
-    res.status(400).json({ error: 'Failed to update resource' });
+    const errorResponse: ErrorResponse = {
+      message: 'Failed to update resource',
+      errors: [],
+    };
+    res.status(400).json(errorResponse);
   }
 });
 
@@ -77,7 +98,11 @@ router.delete('/:id', (req: Request, res: Response) => {
     res.status(204).send();
   } catch (error) {
     logger.error('ResourceRoute', 'Failed to delete resource', error);
-    res.status(404).json({ error: 'Resource not found' });
+    const errorResponse: ErrorResponse = {
+      message: 'Resource not found',
+      errors: [],
+    };
+    res.status(404).json(errorResponse);
   }
 });
 

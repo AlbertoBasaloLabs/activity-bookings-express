@@ -12,7 +12,7 @@
 ### Tech Stack
 - **Language**: TypeScript (strict mode)
 - **Framework**: Express.js
-- **Database**: In-memory (Map-based storage)
+- **Database**: JSON file-system store at `/db` with seed data (TR6 implemented)
 - **Security**: JWT tokens for authentication
 - **Testing**: Playwright for E2E tests
 - **Logging**: Custom logger utility
@@ -40,12 +40,14 @@ npm run typecheck
 ### Folder structure
 ```text
 .                         # Project root  
+├── db/                   # JSON file-system store: entity files + db/seed/
 ├── src/                  # Source code
 │   ├── index.ts          # Express app entry point
 │   ├── routes/           # HTTP layer (Express routers)
 │   ├── services/         # Business logic layer
 │   ├── middleware/       # Express middleware (auth, etc.)
 │   ├── types/            # TypeScript type definitions
+│   ├── repositories/      # Data access layer (JSON file-based)
 │   └── utils/            # Shared utilities
 ├── client/               # Client type definitions (shared)
 ├── tests/                # E2E tests (Playwright)
@@ -65,6 +67,7 @@ npm run typecheck
 - Follow layered architecture: Routes → Services → Types.
 - Use client types from `client/` folder for API contracts.
 - Implement JWT authentication middleware for protected routes.
+- For TR6: persist via JSON in `db/`; load activity seed data from `db/seed/`.
 - Validate all inputs in service layer before processing.
 - Return appropriate HTTP status codes (200, 201, 400, 404, 204).
 

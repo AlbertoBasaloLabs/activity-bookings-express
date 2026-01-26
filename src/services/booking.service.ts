@@ -8,16 +8,54 @@ import {
 import { ActivityService } from './activity.service';
 import { PaymentService } from './payment.service';
 import { logger } from '../utils/logger';
+import { JsonRepository } from '../repositories/json.repository';
 
 export class BookingService {
-  private bookings = new Map<string, Booking>();
+  private repository: JsonRepository<Booking>;
   private nextId = 1;
   private activityService: ActivityService;
   private paymentService: PaymentService;
 
-  constructor(activityService: ActivityService, paymentService: PaymentService) {
+  constructor(
+    activityService: ActivityService,
+    paymentService: PaymentService,
+    repository?: JsonRepository<Booking>
+  ) {
     this.activityService = activityService;
     this.paymentService = paymentService;
+    
+    if (repository) {
+      this.repository = repository;
+      // Calculate nextId from repository
+      const allBookings = this.repository.getAll();
+      let maxId = 0;
+      for (const booking of allBookings) {
+        const match = booking.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    } else {
+      // Fallback to in-memory for backward compatibility
+      this.repository = new JsonRepository<Booking>('db/bookings.json');
+      this.repository.load();
+      const allBookings = this.repository.getAll();
+      let maxId = 0;
+      for (const booking of allBookings) {
+        const match = booking.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    }
   }
 
   /**
@@ -64,7 +102,7 @@ export class BookingService {
       paymentStatus,
     };
 
-    this.bookings.set(bookingId, booking);
+    this.repository.create(booking);
     logger.info('BookingService', 'Booking created', {
       id: bookingId,
       activityId: req.activityId,
@@ -79,7 +117,7 @@ export class BookingService {
    * Returns array of bookings filtered by activityId
    */
   getBookingsByActivityId(activityId: string): Booking[] {
-    return Array.from(this.bookings.values()).filter((booking) => booking.activityId === activityId);
+    return this.repository.getAll().filter((booking) => booking.activityId === activityId);
   }
 
   /**
@@ -104,7 +142,7 @@ export class BookingService {
    * Returns array of bookings filtered by userId
    */
   getAllByUserId(userId: string): Booking[] {
-    return Array.from(this.bookings.values()).filter((booking) => booking.userId === userId);
+    return this.repository.getAll().filter((booking) => booking.userId === userId);
   }
 
   /**
@@ -112,7 +150,7 @@ export class BookingService {
    * Returns undefined if not found
    */
   getById(id: string): Booking | undefined {
-    return this.bookings.get(id);
+    return this.repository.getById(id);
   }
 
   /**

@@ -1,10 +1,59 @@
 import { CreateUserRequest, LoginRequest, User, ValidationError } from '../types/user';
 import { logger } from '../utils/logger';
+import { JsonRepository } from '../repositories/json.repository';
 
 export class UserService {
-  private users = new Map<string, User>();
+  private repository: JsonRepository<User>;
   private emailIndex = new Map<string, string>(); // email -> userId
   private nextId = 1;
+
+  constructor(repository?: JsonRepository<User>) {
+    if (repository) {
+      this.repository = repository;
+      this.rebuildEmailIndex();
+      // Calculate nextId from repository
+      const allUsers = this.repository.getAll();
+      let maxId = 0;
+      for (const user of allUsers) {
+        const match = user.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    } else {
+      // Fallback to in-memory for backward compatibility
+      this.repository = new JsonRepository<User>('db/users.json');
+      this.repository.load();
+      this.rebuildEmailIndex();
+      const allUsers = this.repository.getAll();
+      let maxId = 0;
+      for (const user of allUsers) {
+        const match = user.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    }
+  }
+
+  /**
+   * Rebuilds the email index from repository data
+   */
+  private rebuildEmailIndex(): void {
+    this.emailIndex.clear();
+    const allUsers = this.repository.getAll();
+    for (const user of allUsers) {
+      this.emailIndex.set(user.email.toLowerCase(), user.id);
+    }
+  }
 
   /**
    * Creates a new user
@@ -31,7 +80,7 @@ export class UserService {
       createdAt: new Date().toISOString(),
     };
 
-    this.users.set(userId, user);
+    this.repository.create(user);
     this.emailIndex.set(user.email, userId);
     logger.info('UserService', 'User created', { id: userId, email: user.email });
     return user;
@@ -42,7 +91,7 @@ export class UserService {
    * Returns undefined if not found
    */
   getById(id: string): User | undefined {
-    return this.users.get(id);
+    return this.repository.getById(id);
   }
 
   /**
@@ -54,7 +103,7 @@ export class UserService {
     if (!userId) {
       return undefined;
     }
-    return this.users.get(userId);
+    return this.repository.getById(userId);
   }
 
   /**
