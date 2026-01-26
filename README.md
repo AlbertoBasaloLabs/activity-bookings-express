@@ -15,39 +15,20 @@ A **backend API** for offering bookings to activities by registered users
 - Security is based on simple JWT tokens.
 - Current client specs to use the types from the [types/](types/) folder.
 
-**Node + TypeScript Setup**
-- **Files:** See [package.json](package.json), [tsconfig.json](tsconfig.json), and [src/index.ts](src/index.ts).
-- **Dev server:** Starts with `tsx` and serves JSON on `/`.
-- **Scripts:** `dev`, `build`, `start`, `typecheck` defined in [package.json](package.json).
+[https://github.com/AlbertoBasaloLabs/ActivityBookingsExpress](https://github.com/AlbertoBasaloLabs/ActivityBookingsExpress)
 
 **Quickstart**
-- **Install:**
 
 ```bash
+# Set up the project
 npm install
-```
-
-- **Run dev:**
-
-```bash
+# Run the development server
 npm run dev
-```
-
-- **Build:**
-
-```bash
+# Build the project
 npm run build
-```
-
-- **Start (built app):**
-
-```bash
+# Run the production server
 npm run start
-```
-
-- **Type-check only:**
-
-```bash
+# Type-check only
 npm run typecheck
 ```
 
@@ -83,3 +64,12 @@ The server listens on `http://localhost:3000` and responds with a small JSON pay
 - `POST /bookings` - Create a new booking (authenticated, requires: activityId, participants)
 
 See specifications in [specs/](specs/) folder for detailed API documentation.
+
+--- 
+
+- **Author**: [Alberto Basalo](https://albertobasalo.dev)
+- **Ai Code Academy en Español**: [AI code Academy](https://aicode.academy)
+- **Socials**:
+  - [X](https://x.com/albertobasalo)
+  - [LinkedIn](https://www.linkedin.com/in/albertobasalo/)
+  - [GitHub](https://github.com/albertobasalo)
