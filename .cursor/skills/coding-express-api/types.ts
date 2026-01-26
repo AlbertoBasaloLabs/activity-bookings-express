@@ -41,8 +41,9 @@ export interface ValidationError {
 
 /**
  * Standard error response format
+ * All error responses must follow this structure
  */
 export interface ErrorResponse {
-  error: string;
-  details?: unknown;
+  message: string;
+  errors: ValidationError[];
 }

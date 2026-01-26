@@ -1,14 +1,48 @@
 import { Payment, PaymentStatus } from '../types/payment';
 import { MockPaymentGatewayAdapter } from '../types/payment';
 import { logger } from '../utils/logger';
+import { JsonRepository } from '../repositories/json.repository';
 
 export class PaymentService {
-  private payments = new Map<string, Payment>();
+  private repository: JsonRepository<Payment>;
   private nextId = 1;
   private gateway: MockPaymentGatewayAdapter;
 
-  constructor(gateway: MockPaymentGatewayAdapter) {
+  constructor(gateway: MockPaymentGatewayAdapter, repository?: JsonRepository<Payment>) {
     this.gateway = gateway;
+    
+    if (repository) {
+      this.repository = repository;
+      // Calculate nextId from repository
+      const allPayments = this.repository.getAll();
+      let maxId = 0;
+      for (const payment of allPayments) {
+        const match = payment.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    } else {
+      // Fallback to in-memory for backward compatibility
+      this.repository = new JsonRepository<Payment>('db/payments.json');
+      this.repository.load();
+      const allPayments = this.repository.getAll();
+      let maxId = 0;
+      for (const payment of allPayments) {
+        const match = payment.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    }
   }
 
   /**
@@ -43,7 +77,7 @@ export class PaymentService {
       createdAt: now,
     };
 
-    this.payments.set(paymentId, payment);
+    this.repository.create(payment);
     logger.info('PaymentService', 'Payment created', {
       id: paymentId,
       bookingId,
@@ -54,6 +88,6 @@ export class PaymentService {
   }
 
   getById(id: string): Payment | undefined {
-    return this.payments.get(id);
+    return this.repository.getById(id);
   }
 }

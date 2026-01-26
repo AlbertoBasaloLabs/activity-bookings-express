@@ -5,17 +5,20 @@ import { PaymentService } from '../services/payment.service';
 import { MockPaymentGateway } from '../services/mock-payment-gateway';
 import { CreateBookingRequest } from '../types/booking';
 import { AuthenticatedRequest } from '../types/auth';
+import { ErrorResponse } from '../types/error';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { activityRepository, paymentRepository, bookingRepository } from '../utils/data-loader';
 
 const router = Router();
-const activityService = new ActivityService();
-const paymentService = new PaymentService(new MockPaymentGateway());
-const bookingService = new BookingService(activityService, paymentService);
+const activityService = new ActivityService(activityRepository);
+const paymentService = new PaymentService(new MockPaymentGateway(), paymentRepository);
+const bookingService = new BookingService(activityService, paymentService, bookingRepository);
 
 /**
  * GET /bookings
  * Retrieves all bookings for the authenticated user
+ * Optional query parameter: activityId - filters bookings by activity ID
  * Requires authentication
  * Returns 200 with array of enriched booking objects, 401 if unauthenticated
  */
@@ -24,15 +27,30 @@ router.get('/', authenticateToken, (req: Request, res: Response) => {
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
-    const bookings = bookingService.getAllByUserId(authReq.user.id);
+    let bookings = bookingService.getAllByUserId(authReq.user.id);
+
+    // Filter by activityId if provided as query parameter
+    const activityId = req.query.activityId as string | undefined;
+    if (activityId) {
+      bookings = bookings.filter((booking) => booking.activityId === activityId);
+    }
+
     const enrichedBookings = bookings.map((booking) => bookingService.enrichBookingWithActivity(booking));
     res.status(200).json(enrichedBookings);
   } catch (error) {
     logger.error('BookingRoute', 'Failed to retrieve bookings', error);
-    res.status(500).json({ error: 'Failed to retrieve bookings' });
+    const errorResponse: ErrorResponse = {
+      message: 'Failed to retrieve bookings',
+      errors: [],
+    };
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -47,7 +65,11 @@ router.get('/:id', authenticateToken, (req: Request, res: Response) => {
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
     const bookingId = req.params.id;
@@ -56,10 +78,14 @@ router.get('/:id', authenticateToken, (req: Request, res: Response) => {
     res.status(200).json(enrichedBooking);
   } catch (error) {
     logger.error('BookingRoute', 'Failed to retrieve booking', error);
-    if (error instanceof Error && error.message === 'Booking not found') {
-      return res.status(404).json({ error: 'Booking not found' });
-    }
-    res.status(500).json({ error: 'Failed to retrieve booking' });
+    const errorResponse: ErrorResponse = {
+      message: error instanceof Error && error.message === 'Booking not found'
+        ? 'Booking not found'
+        : 'Failed to retrieve booking',
+      errors: [],
+    };
+    const statusCode = error instanceof Error && error.message === 'Booking not found' ? 404 : 500;
+    res.status(statusCode).json(errorResponse);
   }
 });
 
@@ -73,30 +99,47 @@ router.post('/', authenticateToken, (req: Request, res: Response) => {
   const authReq = req as AuthenticatedRequest;
   const errors = bookingService.validateCreate(req.body);
   if (errors.length > 0) {
-    return res.status(400).json({ errors });
+    const errorResponse: ErrorResponse = {
+      message: 'Validation failed',
+      errors,
+    };
+    return res.status(400).json(errorResponse);
   }
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
     const booking = bookingService.create(req.body as CreateBookingRequest, authReq.user.id);
     res.status(201).json(booking);
   } catch (error) {
     logger.error('BookingRoute', 'Failed to create booking', error);
+    let message = 'Failed to create booking';
+    let statusCode = 400;
+    
     if (error instanceof Error) {
       if (error.message === 'Activity not found') {
-        return res.status(404).json({ error: 'Activity not found' });
-      }
-      if (error.message.includes('Capacity exceeded')) {
-        return res.status(400).json({ error: error.message });
-      }
-      if (error.message === 'Payment could not be processed') {
-        return res.status(402).json({ error: 'Payment could not be processed' });
+        message = 'Activity not found';
+        statusCode = 404;
+      } else if (error.message.includes('Capacity exceeded')) {
+        message = error.message;
+        statusCode = 400;
+      } else if (error.message === 'Payment could not be processed') {
+        message = 'Payment could not be processed';
+        statusCode = 402;
       }
     }
-    res.status(400).json({ error: 'Failed to create booking' });
+    
+    const errorResponse: ErrorResponse = {
+      message,
+      errors: [],
+    };
+    res.status(statusCode).json(errorResponse);
   }
 });
 

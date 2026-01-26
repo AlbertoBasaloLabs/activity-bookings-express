@@ -6,10 +6,47 @@ import {
   ValidationError,
 } from '../types/activity';
 import { logger } from '../utils/logger';
+import { JsonRepository } from '../repositories/json.repository';
 
 export class ActivityService {
-  private activities = new Map<string, Activity>();
+  private repository: JsonRepository<Activity>;
   private nextId = 1;
+
+  constructor(repository?: JsonRepository<Activity>) {
+    // Use provided repository or create default in-memory one for backward compatibility
+    if (repository) {
+      this.repository = repository;
+      // Calculate nextId from repository
+      const allActivities = this.repository.getAll();
+      let maxId = 0;
+      for (const activity of allActivities) {
+        const match = activity.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    } else {
+      // Fallback to in-memory Map for backward compatibility
+      this.repository = new JsonRepository<Activity>('db/activities.json', 'db/seed/activities.json');
+      this.repository.load();
+      const allActivities = this.repository.getAll();
+      let maxId = 0;
+      for (const activity of allActivities) {
+        const match = activity.id.match(/-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) {
+            maxId = num;
+          }
+        }
+      }
+      this.nextId = maxId + 1;
+    }
+  }
 
   /**
    * Creates a new activity
@@ -31,16 +68,16 @@ export class ActivityService {
       slug: slug,
       price: req.price,
       date: req.date,
-      duration: req.duration,
+      duration: req.duration ?? 60,
       location: req.location,
       minParticipants: req.minParticipants,
       maxParticipants: req.maxParticipants,
-      status: req.status,
+      status: req.status ?? 'draft',
       userId: userId,
       createdAt: now,
     };
 
-    this.activities.set(activityId, activity);
+    this.repository.create(activity);
     logger.info('ActivityService', 'Activity created', { id: activityId, name: activity.name });
     return activity;
   }
@@ -50,7 +87,78 @@ export class ActivityService {
    * Returns array of all activities
    */
   getAll(): Activity[] {
-    return Array.from(this.activities.values());
+    return this.repository.getAll();
+  }
+
+  /**
+   * Queries activities with optional filters, search, and sorting
+   * @param options Query options: q (search term), slug (filter by slug), _sort (field to sort by), _order (asc/desc)
+   * @returns Filtered and sorted array of activities
+   */
+  query(options: {
+    q?: string;
+    slug?: string;
+    _sort?: string;
+    _order?: 'asc' | 'desc';
+  }): Activity[] {
+    let results = this.repository.getAll();
+
+    // Filter by slug if provided
+    if (options.slug) {
+      results = results.filter((activity) => activity.slug === options.slug);
+    }
+
+    // Search by query term (searches in name, location, and slug)
+    if (options.q && options.q.trim() !== '') {
+      const searchTerm = options.q.toLowerCase().trim();
+      results = results.filter(
+        (activity) =>
+          activity.name.toLowerCase().includes(searchTerm) ||
+          activity.location.toLowerCase().includes(searchTerm) ||
+          activity.slug.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Sort results
+    if (options._sort) {
+      const sortField = options._sort as keyof Activity;
+      const order = options._order === 'desc' ? -1 : 1;
+
+      results.sort((a, b) => {
+        const aValue = a[sortField];
+        const bValue = b[sortField];
+
+        // Handle undefined/null values
+        if (aValue === undefined || aValue === null) {
+          return bValue === undefined || bValue === null ? 0 : 1;
+        }
+        if (bValue === undefined || bValue === null) {
+          return -1;
+        }
+
+        // Handle date strings (ISO format)
+        if (sortField === 'date' || sortField === 'createdAt' || sortField === 'updatedAt') {
+          const aDate = new Date(aValue as string).getTime();
+          const bDate = new Date(bValue as string).getTime();
+          return (aDate - bDate) * order;
+        }
+
+        // Handle numbers
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return (aValue - bValue) * order;
+        }
+
+        // Handle strings
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return aValue.localeCompare(bValue) * order;
+        }
+
+        // Fallback: convert to string and compare
+        return String(aValue).localeCompare(String(bValue)) * order;
+      });
+    }
+
+    return results;
   }
 
   /**
@@ -58,7 +166,7 @@ export class ActivityService {
    * Returns undefined if not found
    */
   getById(id: string): Activity | undefined {
-    return this.activities.get(id);
+    return this.repository.getById(id);
   }
 
   /**
@@ -67,7 +175,7 @@ export class ActivityService {
    * Only updates if userId matches
    */
   update(id: string, req: UpdateActivityRequest, userId: string): Activity {
-    const activity = this.activities.get(id);
+    const activity = this.repository.getById(id);
     if (!activity) {
       throw new Error('Activity not found');
     }
@@ -90,7 +198,7 @@ export class ActivityService {
       updatedAt: new Date().toISOString(),
     };
 
-    this.activities.set(id, updatedActivity);
+    this.repository.update(id, updatedActivity);
     logger.info('ActivityService', 'Activity updated', { id, name: updatedActivity.name });
     return updatedActivity;
   }
@@ -101,7 +209,7 @@ export class ActivityService {
    * Only deletes if userId matches
    */
   delete(id: string, userId: string): boolean {
-    const activity = this.activities.get(id);
+    const activity = this.repository.getById(id);
     if (!activity) {
       return false;
     }
@@ -110,7 +218,7 @@ export class ActivityService {
       throw new Error('Forbidden: You can only delete your own activities');
     }
 
-    this.activities.delete(id);
+    this.repository.delete(id);
     logger.info('ActivityService', 'Activity deleted', { id, name: activity.name });
     return true;
   }
@@ -133,9 +241,14 @@ export class ActivityService {
       errors.push({ field: 'name', message: 'Name is required and must be a non-empty string' });
     }
 
-    // Validate price
-    if (typeof req.price !== 'number' || req.price <= 0) {
+    // Validate price (try to parse from string)
+    if (req.price === undefined || req.price === null) {
       errors.push({ field: 'price', message: 'Price is required and must be a positive number' });
+    } else {
+      const price = typeof req.price === 'string' ? Number(req.price) : req.price;
+      if (typeof price !== 'number' || isNaN(price) || price <= 0) {
+        errors.push({ field: 'price', message: 'Price must be a positive number' });
+      }
     }
 
     // Validate date
@@ -153,9 +266,12 @@ export class ActivityService {
       }
     }
 
-    // Validate duration
-    if (typeof req.duration !== 'number' || req.duration <= 0) {
-      errors.push({ field: 'duration', message: 'Duration is required and must be a positive number (in minutes)' });
+    // Validate duration (optional, defaults to 60, try to parse from string)
+    if (req.duration !== undefined && req.duration !== null) {
+      const duration = typeof req.duration === 'string' ? Number(req.duration) : req.duration;
+      if (typeof duration !== 'number' || isNaN(duration) || duration <= 0) {
+        errors.push({ field: 'duration', message: 'Duration must be a positive number (in minutes)' });
+      }
     }
 
     // Validate location
@@ -163,21 +279,53 @@ export class ActivityService {
       errors.push({ field: 'location', message: 'Location is required and must be a non-empty string' });
     }
 
-    // Validate minParticipants
-    if (typeof req.minParticipants !== 'number' || req.minParticipants < 1) {
+    // Validate minParticipants (try to parse from string)
+    let parsedMinParticipants: number | undefined;
+    if (req.minParticipants === undefined || req.minParticipants === null) {
       errors.push({ field: 'minParticipants', message: 'Min participants is required and must be at least 1' });
+    } else {
+      let parsed: number;
+      if (typeof req.minParticipants === 'string') {
+        parsed = Number(req.minParticipants);
+      } else if (typeof req.minParticipants === 'number') {
+        parsed = req.minParticipants;
+      } else {
+        parsed = NaN;
+      }
+      parsedMinParticipants = parsed;
+      if (typeof parsed !== 'number' || isNaN(parsed) || parsed < 1) {
+        errors.push({ field: 'minParticipants', message: 'Min participants must be at least 1' });
+      }
     }
 
-    // Validate maxParticipants
-    if (typeof req.maxParticipants !== 'number' || req.maxParticipants < 1) {
+    // Validate maxParticipants (try to parse from string)
+    let parsedMaxParticipants: number | undefined;
+    if (req.maxParticipants === undefined || req.maxParticipants === null) {
       errors.push({ field: 'maxParticipants', message: 'Max participants is required and must be at least 1' });
+    } else {
+      let parsed: number;
+      if (typeof req.maxParticipants === 'string') {
+        parsed = Number(req.maxParticipants);
+      } else if (typeof req.maxParticipants === 'number') {
+        parsed = req.maxParticipants;
+      } else {
+        parsed = NaN;
+      }
+      parsedMaxParticipants = parsed;
+      if (typeof parsed !== 'number' || isNaN(parsed) || parsed < 1) {
+        errors.push({ field: 'maxParticipants', message: 'Max participants must be at least 1' });
+      }
     }
 
     // Validate minParticipants <= maxParticipants
     if (
-      typeof req.minParticipants === 'number' &&
-      typeof req.maxParticipants === 'number' &&
-      req.minParticipants > req.maxParticipants
+      parsedMinParticipants !== undefined &&
+      parsedMaxParticipants !== undefined &&
+      typeof parsedMinParticipants === 'number' &&
+      typeof parsedMaxParticipants === 'number' &&
+      !isNaN(parsedMinParticipants) &&
+      !isNaN(parsedMaxParticipants) &&
+      parsedMinParticipants > parsedMaxParticipants
     ) {
       errors.push({
         field: 'minParticipants',
@@ -185,13 +333,15 @@ export class ActivityService {
       });
     }
 
-    // Validate status
-    const validStatuses = ['draft', 'published', 'confirmed', 'sold-out', 'done', 'cancelled'];
-    if (!req.status || typeof req.status !== 'string' || !validStatuses.includes(req.status)) {
-      errors.push({
-        field: 'status',
-        message: `Status is required and must be one of: ${validStatuses.join(', ')}`,
-      });
+    // Validate status (optional, defaults to 'draft')
+    if (req.status !== undefined && req.status !== null) {
+      const validStatuses = ['draft', 'published', 'confirmed', 'sold-out', 'done', 'cancelled'];
+      if (typeof req.status !== 'string' || !validStatuses.includes(req.status)) {
+        errors.push({
+          field: 'status',
+          message: `Status must be one of: ${validStatuses.join(', ')}`,
+        });
+      }
     }
 
     return errors;
@@ -322,7 +472,7 @@ export class ActivityService {
    * Throws if validation fails, activity not found, or ownership mismatch
    */
   transitionStatus(id: string, targetStatus: ActivityStatus, userId: string): Activity {
-    const activity = this.activities.get(id);
+    const activity = this.repository.getById(id);
     if (!activity) {
       throw new Error('Activity not found');
     }
@@ -344,7 +494,7 @@ export class ActivityService {
       updatedAt: new Date().toISOString(),
     };
 
-    this.activities.set(id, updatedActivity);
+    this.repository.update(id, updatedActivity);
     logger.info('ActivityService', 'Activity status transitioned', {
       id,
       from: activity.status,

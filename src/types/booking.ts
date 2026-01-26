@@ -53,8 +53,6 @@ export interface BookingResponse {
 /**
  * Validation error response format
  * Returned when validation fails (HTTP 400)
+ * @deprecated Use ValidationError from '../types/error' instead
  */
-export interface ValidationError {
-  field: string;
-  message: string;
-}
+export type { ValidationError } from './error';

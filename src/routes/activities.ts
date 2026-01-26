@@ -2,11 +2,59 @@ import { Request, Response, Router } from 'express';
 import { ActivityService } from '../services/activity.service';
 import { ActivityStatus, CreateActivityRequest, UpdateActivityRequest } from '../types/activity';
 import { AuthenticatedRequest } from '../types/auth';
+import { ErrorResponse } from '../types/error';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { activityRepository } from '../utils/data-loader';
 
 const router = Router();
-const activityService = new ActivityService();
+const activityService = new ActivityService(activityRepository);
+
+/**
+ * Normalizes create request body:
+ * - Parses numeric strings to numbers (price, duration, minParticipants, maxParticipants)
+ * - Applies default values (duration: 60, status: 'draft')
+ */
+function normalizeCreateRequest(body: unknown): Record<string, unknown> {
+  if (!body || typeof body !== 'object') {
+    return {};
+  }
+
+  const req = body as Record<string, unknown>;
+  const normalized: Record<string, unknown> = { ...req };
+
+  // Parse numeric fields from strings
+  if (req.price !== undefined) {
+    const price = typeof req.price === 'string' ? Number(req.price) : req.price;
+    normalized.price = price;
+  }
+
+  if (req.duration !== undefined) {
+    const duration = typeof req.duration === 'string' ? Number(req.duration) : req.duration;
+    normalized.duration = duration;
+  }
+
+  if (req.minParticipants !== undefined) {
+    const minParticipants = typeof req.minParticipants === 'string' ? Number(req.minParticipants) : req.minParticipants;
+    normalized.minParticipants = minParticipants;
+  }
+
+  if (req.maxParticipants !== undefined) {
+    const maxParticipants = typeof req.maxParticipants === 'string' ? Number(req.maxParticipants) : req.maxParticipants;
+    normalized.maxParticipants = maxParticipants;
+  }
+
+  // Apply defaults
+  if (normalized.duration === undefined || normalized.duration === null) {
+    normalized.duration = 60;
+  }
+
+  if (normalized.status === undefined || normalized.status === null) {
+    normalized.status = 'draft';
+  }
+
+  return normalized;
+}
 
 /**
  * POST /activities
@@ -16,37 +64,76 @@ const activityService = new ActivityService();
  */
 router.post('/', authenticateToken, (req: Request, res: Response) => {
   const authReq = req as AuthenticatedRequest;
-  const errors = activityService.validateCreate(req.body);
+  
+  // Normalize request body: parse numeric strings and apply defaults
+  const normalizedBody = normalizeCreateRequest(req.body);
+  
+  const errors = activityService.validateCreate(normalizedBody);
   if (errors.length > 0) {
-    return res.status(400).json({ errors });
+    const errorResponse: ErrorResponse = {
+      message: 'Validation failed',
+      errors,
+    };
+    return res.status(400).json(errorResponse);
   }
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
-    const activity = activityService.create(req.body as CreateActivityRequest, authReq.user.id);
+    const activity = activityService.create(normalizedBody as unknown as CreateActivityRequest, authReq.user.id);
     res.status(201).json(activity);
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to create activity', error);
-    res.status(400).json({ error: 'Failed to create activity' });
+    const errorResponse: ErrorResponse = {
+      message: 'Failed to create activity',
+      errors: [],
+    };
+    res.status(400).json(errorResponse);
   }
 });
 
 /**
  * GET /activities
- * Lists all activities
+ * Lists all activities with optional query parameters
+ * Query parameters:
+ *   - q: Search term (searches in name, location, slug)
+ *   - slug: Filter by exact slug match
+ *   - _sort: Field to sort by (e.g., 'id', 'name', 'date')
+ *   - _order: Sort order ('asc' or 'desc', defaults to 'asc')
  * No authentication required
  * Returns 200 with array of activities
  */
 router.get('/', (req: Request, res: Response) => {
   try {
-    const activities = activityService.getAll();
+    const queryParams = req.query;
+    const hasQueryParams = queryParams.q || queryParams.slug || queryParams._sort;
+
+    let activities: ReturnType<typeof activityService.getAll>;
+    if (hasQueryParams) {
+      activities = activityService.query({
+        q: queryParams.q as string | undefined,
+        slug: queryParams.slug as string | undefined,
+        _sort: queryParams._sort as string | undefined,
+        _order: (queryParams._order as 'asc' | 'desc' | undefined) || 'asc',
+      });
+    } else {
+      activities = activityService.getAll();
+    }
+
     res.status(200).json(activities);
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to get activities', error);
-    res.status(500).json({ error: 'Failed to retrieve activities' });
+    const errorResponse: ErrorResponse = {
+      message: 'Failed to retrieve activities',
+      errors: [],
+    };
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -60,12 +147,20 @@ router.get('/:id', (req: Request, res: Response) => {
   try {
     const activity = activityService.getById(req.params.id);
     if (!activity) {
-      return res.status(404).json({ error: 'Activity not found' });
+      const errorResponse: ErrorResponse = {
+        message: 'Activity not found',
+        errors: [],
+      };
+      return res.status(404).json(errorResponse);
     }
     res.status(200).json(activity);
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to get activity', error);
-    res.status(500).json({ error: 'Failed to retrieve activity' });
+    const errorResponse: ErrorResponse = {
+      message: 'Failed to retrieve activity',
+      errors: [],
+    };
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -80,32 +175,53 @@ router.put('/:id', authenticateToken, (req: Request, res: Response) => {
   const existingActivity = activityService.getById(req.params.id);
   
   if (!existingActivity) {
-    return res.status(404).json({ error: 'Activity not found' });
+    const errorResponse: ErrorResponse = {
+      message: 'Activity not found',
+      errors: [],
+    };
+    return res.status(404).json(errorResponse);
   }
 
   const errors = activityService.validateUpdate(req.body, existingActivity);
   if (errors.length > 0) {
-    return res.status(400).json({ errors });
+    const errorResponse: ErrorResponse = {
+      message: 'Validation failed',
+      errors,
+    };
+    return res.status(400).json(errorResponse);
   }
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
     const activity = activityService.update(req.params.id, req.body as UpdateActivityRequest, authReq.user.id);
     res.status(200).json(activity);
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to update activity', error);
+    let message = 'Failed to update activity';
+    let statusCode = 400;
+    
     if (error instanceof Error) {
       if (error.message === 'Activity not found') {
-        return res.status(404).json({ error: 'Activity not found' });
-      }
-      if (error.message.includes('Forbidden')) {
-        return res.status(403).json({ error: 'You can only update your own activities' });
+        message = 'Activity not found';
+        statusCode = 404;
+      } else if (error.message.includes('Forbidden')) {
+        message = 'You can only update your own activities';
+        statusCode = 403;
       }
     }
-    res.status(400).json({ error: 'Failed to update activity' });
+    
+    const errorResponse: ErrorResponse = {
+      message,
+      errors: [],
+    };
+    res.status(statusCode).json(errorResponse);
   }
 });
 
@@ -120,20 +236,37 @@ router.delete('/:id', authenticateToken, (req: Request, res: Response) => {
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
     const deleted = activityService.delete(req.params.id, authReq.user.id);
     if (!deleted) {
-      return res.status(404).json({ error: 'Activity not found' });
+      const errorResponse: ErrorResponse = {
+        message: 'Activity not found',
+        errors: [],
+      };
+      return res.status(404).json(errorResponse);
     }
     res.status(204).send();
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to delete activity', error);
+    let message = 'Failed to delete activity';
+    let statusCode = 500;
+    
     if (error instanceof Error && error.message.includes('Forbidden')) {
-      return res.status(403).json({ error: 'You can only delete your own activities' });
+      message = 'You can only delete your own activities';
+      statusCode = 403;
     }
-    res.status(500).json({ error: 'Failed to delete activity' });
+    
+    const errorResponse: ErrorResponse = {
+      message,
+      errors: [],
+    };
+    res.status(statusCode).json(errorResponse);
   }
 });
 
@@ -148,23 +281,37 @@ router.patch('/:id/status', authenticateToken, (req: Request, res: Response) => 
 
   // Validate request body
   if (!req.body || typeof req.body !== 'object') {
-    return res.status(400).json({ error: 'Request body must be a valid JSON object' });
+    const errorResponse: ErrorResponse = {
+      message: 'Request body must be a valid JSON object',
+      errors: [],
+    };
+    return res.status(400).json(errorResponse);
   }
 
   if (!req.body.status || typeof req.body.status !== 'string') {
-    return res.status(400).json({ error: 'Status field is required and must be a string' });
+    const errorResponse: ErrorResponse = {
+      message: 'Status field is required and must be a string',
+      errors: [],
+    };
+    return res.status(400).json(errorResponse);
   }
 
   const validStatuses: ActivityStatus[] = ['draft', 'published', 'confirmed', 'sold-out', 'done', 'cancelled'];
   if (!validStatuses.includes(req.body.status)) {
-    return res.status(400).json({
-      error: `Invalid status. Status must be one of: ${validStatuses.join(', ')}`,
-    });
+    const errorResponse: ErrorResponse = {
+      message: `Invalid status. Status must be one of: ${validStatuses.join(', ')}`,
+      errors: [],
+    };
+    return res.status(400).json(errorResponse);
   }
 
   try {
     if (!authReq.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      const errorResponse: ErrorResponse = {
+        message: 'Authentication required',
+        errors: [],
+      };
+      return res.status(401).json(errorResponse);
     }
 
     const activity = activityService.transitionStatus(
@@ -175,18 +322,27 @@ router.patch('/:id/status', authenticateToken, (req: Request, res: Response) => 
     res.status(200).json(activity);
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to transition activity status', error);
+    let message = 'Failed to transition activity status';
+    let statusCode = 500;
+    
     if (error instanceof Error) {
       if (error.message === 'Activity not found') {
-        return res.status(404).json({ error: 'Activity not found' });
-      }
-      if (error.message.includes('Forbidden')) {
-        return res.status(403).json({ error: 'You can only transition your own activities' });
-      }
-      if (error.message.includes('Invalid status transition')) {
-        return res.status(400).json({ error: error.message });
+        message = 'Activity not found';
+        statusCode = 404;
+      } else if (error.message.includes('Forbidden')) {
+        message = 'You can only transition your own activities';
+        statusCode = 403;
+      } else if (error.message.includes('Invalid status transition')) {
+        message = error.message;
+        statusCode = 400;
       }
     }
-    res.status(500).json({ error: 'Failed to transition activity status' });
+    
+    const errorResponse: ErrorResponse = {
+      message,
+      errors: [],
+    };
+    res.status(statusCode).json(errorResponse);
   }
 });
 

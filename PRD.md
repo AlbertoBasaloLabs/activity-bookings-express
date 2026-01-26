@@ -91,11 +91,16 @@ A backend API system for managing activity bookings where registered users can d
 - **Status**: NotStarted
 
 ### TR4: Input Validation and Error Handling
-- **Description**: All API endpoints must validate input data and return structured error responses with appropriate HTTP status codes.
+- **Description**: All API endpoints must validate input data and return structured error responses with appropriate HTTP status codes. All error responses follow a standardized format: `{ message: string, errors: ValidationError[] }` where `message` provides a summary of the error and `errors` is an array of field-specific validation errors (empty array for non-validation errors).
 - **Priority**: High
-- **Status**: NotStarted
+- **Status**: Completed
 
 ### TR5: Mock Payment Gateway Integration
 - **Description**: Integrate with a mock payment gateway service that simulates payment processing, handling success and failure scenarios.
 - **Priority**: Medium
 - **Status**: Completed
+
+### TR6: JSON File-System Store
+- **Description**: Use JSON files as the persistence layer in a `/db` folder at project root. The system loads and persists entities via JSON files. Include seed (sample) data so the application starts with predefined activities for development, demos, and testing.
+- **Priority**: Medium
+- **Status**: NotStarted

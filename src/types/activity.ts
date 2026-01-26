@@ -35,11 +35,11 @@ export interface CreateActivityRequest {
   name: string;
   price: number;
   date: string; // ISO date string
-  duration: number; // in minutes
+  duration?: number; // in minutes, defaults to 60
   location: string;
   minParticipants: number;
   maxParticipants: number;
-  status: ActivityStatus;
+  status?: ActivityStatus; // defaults to 'draft'
 }
 
 /**
@@ -59,8 +59,6 @@ export interface UpdateActivityRequest {
 /**
  * Validation error response format
  * Returned when validation fails (HTTP 400)
+ * @deprecated Use ValidationError from '../types/error' instead
  */
-export interface ValidationError {
-  field: string;
-  message: string;
-}
+export type { ValidationError } from './error';

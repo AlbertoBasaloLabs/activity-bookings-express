@@ -18,8 +18,8 @@ The system needs user authentication and management capabilities to enable secur
 
 ### User/App interface
 
-- `POST /auth/register` - Register a new user with email, username, password, and terms acceptance
-- `POST /auth/login` - Authenticate user with email and password, returns user data and JWT access token
+- `POST /users` - Register a new user with email, username, password, and terms acceptance
+- `POST /login` - Authenticate user with email and password, returns user data and JWT access token
 - JWT token included in `Authorization: Bearer <token>` header for protected routes
 - Authentication middleware validates JWT tokens and extracts user information
 
@@ -41,12 +41,12 @@ The system needs user authentication and management capabilities to enable secur
 
 ## Acceptance Criteria
 
-- [ ] THE [System] SHALL provide a `POST /auth/register` endpoint that accepts email, username, password, and terms fields
+- [ ] THE [System] SHALL provide a `POST /users` endpoint that accepts email, username, password, and terms fields
 - [ ] WHEN [a user registers with valid data] THE [System] SHALL create a new user account and return user data (without password) with HTTP 201
 - [ ] WHEN [a user registers with an email that already exists] THE [System] SHALL return HTTP 400 with validation errors
 - [ ] WHEN [a user registers with invalid email format] THE [System] SHALL return HTTP 400 with validation errors
 - [ ] WHEN [a user registers with missing required fields] THE [System] SHALL return HTTP 400 with validation errors
-- [ ] THE [System] SHALL provide a `POST /auth/login` endpoint that accepts email and password fields
+- [ ] THE [System] SHALL provide a `POST /login` endpoint that accepts email and password fields
 - [ ] WHEN [a user logs in with valid credentials] THE [System] SHALL return user data and JWT access token with HTTP 200
 - [ ] WHEN [a user logs in with invalid email] THE [System] SHALL return HTTP 401 with error message
 - [ ] WHEN [a user logs in with invalid password] THE [System] SHALL return HTTP 401 with error message

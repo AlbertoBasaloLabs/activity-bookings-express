@@ -66,16 +66,42 @@ See [controller.ts](./controller.ts) template for complete example implementatio
 
 ### Error Response Format
 
-Return validation errors as an array:
+All error responses must follow the standardized format:
 
 ```typescript
-res.status(400).json({
+interface ErrorResponse {
+  message: string;
+  errors: ValidationError[];
+}
+
+interface ValidationError {
+  field: string;
+  message: string;
+}
+```
+
+**For validation errors:**
+```typescript
+const errorResponse: ErrorResponse = {
+  message: 'Validation failed',
   errors: [
     { field: 'name', message: 'Name is required' },
     { field: 'price', message: 'Price must be positive' }
   ]
-});
+};
+res.status(400).json(errorResponse);
 ```
+
+**For non-validation errors:**
+```typescript
+const errorResponse: ErrorResponse = {
+  message: 'Resource not found',
+  errors: []
+};
+res.status(404).json(errorResponse);
+```
+
+Import `ErrorResponse` from `../types/error` in route files.
 
 ## Services Layer
 
