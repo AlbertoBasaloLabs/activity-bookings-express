@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-01-26
+
+### Added
+- JSON file-system persistence layer (TR6) at `/db` folder
+- Repository pattern with `JsonRepository` for data access abstraction
+- File I/O utilities with atomic write pattern (temp file + rename) to prevent corruption
+- Seed data support: `db/seed/activities.json` with 4 predefined activities
+- Centralized data loader (`data-loader.ts`) that loads seed and persisted data on startup
+- Automatic directory creation for `db/` and `db/seed/` folders
+- Data persistence for all entities: activities, users, bookings, payments
+
+### Changed
+- All services (ActivityService, UserService, BookingService, PaymentService) now use JSON repositories instead of in-memory Maps
+- Services maintain backward compatibility with optional repository injection
+- Data persists across server restarts
+- Seed data loads on startup and merges with persisted data (persisted takes precedence)
+- UserService maintains emailIndex Map for fast email lookups while using repository for persistence
+
+### Technical
+- Introduced repository layer (`src/repositories/`) separating data access from business logic
+- All entity data stored in JSON files: `db/activities.json`, `db/users.json`, `db/bookings.json`, `db/payments.json`
+- Seed files are read-only; runtime writes only go to entity files in `db/`
+- Graceful handling of missing files (creates empty arrays, creates directories as needed)
+
 ## [1.9.1] - 2026-01-26
 
 ### Added

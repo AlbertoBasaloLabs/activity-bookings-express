@@ -16,7 +16,7 @@ A RESTful backend API built with Express.js and TypeScript that manages activity
 - **Language**: TypeScript (strict mode)
 - **Framework**: Express.js
 - **Authentication**: JWT (JSON Web Tokens)
-- **Data Storage**: JSON file-system store at `/db` (project root), with seed data for activities; in-memory Map-based until TR6 is implemented
+- **Data Storage**: JSON file-system store at `/db` (project root), with seed data for activities
 - **Validation**: Custom validation in service layer
 - **Logging**: Custom logger utility
 - **Development**: tsx for TypeScript execution
@@ -141,8 +141,13 @@ The application follows a three-layer architecture with clear separation of conc
 │   │   ├── activity.ts          # Activity entity and DTOs
 │   │   ├── booking.ts           # Booking entity and DTOs
 │   │   └── payment.ts           # Payment-related types
+│   ├── repositories/            # Data access layer
+│   │   ├── base.repository.ts   # Repository interface
+│   │   └── json.repository.ts   # JSON file-based implementation
 │   └── utils/                   # Shared utilities
-│       └── logger.ts            # Logging utility
+│       ├── logger.ts            # Logging utility
+│       ├── file-storage.ts       # File I/O utilities
+│       └── data-loader.ts       # Startup data loading
 ```
 
 ### Design Patterns
@@ -208,7 +213,7 @@ Persistence uses a JSON file-system store under `/db` at project root:
 - **Load strategy**: Read JSON on startup; optionally merge or replace in-memory state from seed. Services continue to use repository-style access; the store implementation hides whether data comes from memory, seed, or persisted JSON.
 - **Write strategy**: On create/update/delete, persist changes to the corresponding `db/*.json` file. Use atomic write patterns (e.g. write to temp then rename) to avoid corruption.
 
-Until TR6 is implemented, the system keeps using in-memory Map-based storage (ADR 2). The ADD describes the target design.
+The system uses a repository pattern with `JsonRepository` implementation that provides file-based persistence while maintaining in-memory Maps for fast access during runtime.
 
 ## Architecture Decisions Record (ADR)
 
@@ -264,7 +269,7 @@ Until TR6 is implemented, the system keeps using in-memory Map-based storage (AD
 
 ### ADR 6: JSON File-System Store at `/db` with Seed Data
 - **Decision**: Use JSON files in a `/db` folder at project root as the persistence layer, with seed (sample) data for activities so the app starts with predefined activities.
-- **Status**: Accepted
+- **Status**: Implemented
 - **Context**: PRD TR6. Need simple, dependency-free persistence for dev/demos. File-system JSON avoids a DB setup while enabling persistence across restarts. Seed data ensures activities exist out of the box for booking flows and E2E tests.
 - **Consequences**:
   - No database dependency; `db/` is versionable and portable

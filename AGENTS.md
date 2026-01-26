@@ -12,7 +12,7 @@
 ### Tech Stack
 - **Language**: TypeScript (strict mode)
 - **Framework**: Express.js
-- **Database**: In-memory (Map-based) until TR6; then JSON file-system store at `/db` with seed data
+- **Database**: JSON file-system store at `/db` with seed data (TR6 implemented)
 - **Security**: JWT tokens for authentication
 - **Testing**: Playwright for E2E tests
 - **Logging**: Custom logger utility
@@ -40,13 +40,14 @@ npm run typecheck
 ### Folder structure
 ```text
 .                         # Project root  
-├── db/                   # JSON file-system store (TR6): entity files + db/seed/
+├── db/                   # JSON file-system store: entity files + db/seed/
 ├── src/                  # Source code
 │   ├── index.ts          # Express app entry point
 │   ├── routes/           # HTTP layer (Express routers)
 │   ├── services/         # Business logic layer
 │   ├── middleware/       # Express middleware (auth, etc.)
 │   ├── types/            # TypeScript type definitions
+│   ├── repositories/      # Data access layer (JSON file-based)
 │   └── utils/            # Shared utilities
 ├── client/               # Client type definitions (shared)
 ├── tests/                # E2E tests (Playwright)
