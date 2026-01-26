@@ -103,4 +103,4 @@ A backend API system for managing activity bookings where registered users can d
 ### TR6: JSON File-System Store
 - **Description**: Use JSON files as the persistence layer in a `/db` folder at project root. The system loads and persists entities via JSON files. Include seed (sample) data so the application starts with predefined activities for development, demos, and testing.
 - **Priority**: Medium
-- **Status**: NotStarted
+- **Status**: Completed
