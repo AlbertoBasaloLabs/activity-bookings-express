@@ -1,6 +1,6 @@
 # ActivityBookings 
 
-> Express with TypeScript version
+> Express with TypeScript version for Activity Bookings system
 
 A fictional activity booking system used during training sessions and demos.
 
@@ -12,10 +12,12 @@ A **backend API** for offering bookings to activities by registered users
 - One user can book multiple activities, but cannot exceed the available seats.
 - Users will be billed upon booking, and payments will be processed through a mock gateway.
 
-- Security is based on simple JWT tokens.
-- Current client specs to use the types from the [types/](types/) folder.
+For demo purposes:
 
-[https://github.com/AlbertoBasaloLabs/ActivityBookingsExpress](https://github.com/AlbertoBasaloLabs/ActivityBookingsExpress)
+- Security is based on simple JWT tokens.
+- Data persistence is handled using JSON files 
+
+[Git hub / Alberto Basalo Labs / Activity Bookings Express](https://github.com/AlbertoBasaloLabs/activity-bookings-express)
 
 **Quickstart**
 
