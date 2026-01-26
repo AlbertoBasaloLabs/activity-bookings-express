@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-01-26
+
+### Added
+- CORS middleware to allow cross-origin requests from other ports
+- `cors` package dependency for handling Cross-Origin Resource Sharing
+
+## [1.9.0] - 2026-01-26
+
+### Changed
+- Authentication endpoints restructured for better RESTful design
+- `POST /auth/register` moved to `POST /users` for user registration
+- `POST /auth/login` moved to `POST /login` for user authentication
+- Created separate `users.ts` route file for user management
+- Updated `auth.ts` to only handle login functionality
+
+### Documentation
+- Updated README.md with new endpoint paths
+- Updated user authentication specification to reflect new endpoints
+
+## [1.8.0] - 2026-01-26
+
+### Added
+- Query parameter support for `GET /bookings` endpoint
+- `activityId` parameter: Filter bookings by activity ID for the authenticated user
+
+### Changed
+- `GET /bookings` now supports optional `activityId` query parameter while maintaining backward compatibility (no params = returns all user bookings)
+
+## [1.7.0] - 2026-01-26
+
+### Added
+- Query parameter support for `GET /activities` endpoint
+- `q` parameter: Search term that searches across activity name, location, and slug fields
+- `slug` parameter: Filter activities by exact slug match
+- `_sort` parameter: Sort activities by any field (e.g., 'id', 'name', 'date', 'price')
+- `_order` parameter: Sort order ('asc' or 'desc', defaults to 'asc')
+- `ActivityService.query()` method for filtering, searching, and sorting activities
+- Support for sorting by date strings, numbers, and strings with proper type handling
+
+### Changed
+- `GET /activities` now supports query parameters while maintaining backward compatibility (no params = returns all activities)
+
 ## [1.6.0] - 2026-01-25
 
 ### Added
