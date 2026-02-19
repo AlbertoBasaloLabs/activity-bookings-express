@@ -58,3 +58,16 @@ SECURITY_MODE=open npm run dev
 - `GET /bookings/:id`
 
 See detailed behavior and acceptance criteria in [specs/](specs/).
+
+
+---
+
+- [Repository at GitHub](https://github.com/AlbertoBasaloLabs/activity-bookings-express)
+- Default branch: `master`
+
+- **Author**: [Alberto Basalo](https://albertobasalo.dev)
+- **Ai Code Academy en Español**: [AI code Academy](https://aicode.academy)
+- **Socials**:
+  - [X](https://x.com/albertobasalo)
+  - [LinkedIn](https://www.linkedin.com/in/albertobasalo/)
+  - [GitHub](https://github.com/albertobasalo)
