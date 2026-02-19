@@ -7,17 +7,17 @@
       "description": "Define and validate server-level security mode with safe defaults.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Add security mode type and constants",
           "description": "Define `secured` and `open` values in shared types/config to avoid magic strings"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Implement config resolver utility",
           "description": "Read mode from environment with default `secured` when missing"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Validate mode at startup",
           "description": "Fail fast and log a clear error when configuration value is invalid"
         }
@@ -28,17 +28,17 @@
       "description": "Resolve deterministic impersonated identity for open mode.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Extend user service with first-user lookup",
           "description": "Add `getFirstUser()` returning first persisted user deterministically"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Add explicit empty-users error path",
           "description": "Return/throw domain error when open mode is requested with no available users"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Keep repository access deterministic",
           "description": "Use repository ordering consistently so the same acting user is chosen each run"
         }
@@ -49,22 +49,22 @@
       "description": "Support secured and open execution paths without changing route contracts.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Refactor authenticate middleware by mode",
           "description": "Branch middleware behavior based on resolved runtime mode"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Preserve current JWT flow in secured mode",
           "description": "Keep token extraction, verifyToken checks, and 401 responses unchanged"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Inject acting user in open mode",
           "description": "Attach first-user identity to AuthenticatedRequest when token is absent"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Return standardized error response on open-mode identity failure",
           "description": "Use existing error format when acting user cannot be resolved"
         }
@@ -75,17 +75,17 @@
       "description": "Wire security mode into app bootstrap and protected endpoints.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Initialize security mode in server bootstrap",
           "description": "Resolve mode in `src/index.ts` before serving requests"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Enforce fail-fast rule for open mode without users",
           "description": "Block startup with clear log/error when no impersonation user exists"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Verify protected routes still depend on middleware only",
           "description": "Ensure activities/bookings routes continue receiving auth context through middleware"
         }
