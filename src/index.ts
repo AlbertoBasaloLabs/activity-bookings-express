@@ -41,6 +41,8 @@ app.use('/bookings', bookingsRouter);
 
 app.listen(PORT, () => {
   logger.info('Server', `Running on port ${PORT}`);
+  logger.info('Server', `start at http://localhost:${PORT}/activities`);
+  
 });
 
 export default app;
