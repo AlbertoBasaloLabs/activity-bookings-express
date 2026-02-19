@@ -1,4 +1,5 @@
-import { User } from './user';
+
+export type SecurityMode = 'secured' | 'open';
 
 /**
  * JWT payload structure

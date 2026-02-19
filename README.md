@@ -36,6 +36,23 @@ npm run typecheck
 
 The server listens on `http://localhost:3000` and responds with a small JSON payload. Configure the port via `PORT` env var.
 
+**Security Mode**
+
+- `SECURITY_MODE=secured` (default): protected endpoints require `Authorization: Bearer <token>`.
+- `SECURITY_MODE=open`: protected endpoints do not require client authentication.
+  - In open mode, the server impersonates the first user from `db/users.json`.
+  - If `db/users.json` is empty, server startup fails with a configuration error.
+
+Examples:
+
+```bash
+# Default behavior (secured)
+npm run dev
+
+# Open workshop mode
+SECURITY_MODE=open npm run dev
+```
+
 **API Endpoints**
 
 **System**

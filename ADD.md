@@ -277,3 +277,13 @@ The system uses a repository pattern with `JsonRepository` implementation that p
   - Single-writer workload; not suitable for concurrent multi-process writes
   - Atomic writes (temp + rename) recommended to avoid partial writes
   - Migration path: introduce a repository layer that reads/writes JSON; swap from in-memory to file-based implementation
+
+### ADR 7: Runtime Security Mode (Secured/Open)
+- **Decision**: Introduce a runtime `SECURITY_MODE` configuration with two values: `secured` (default) and `open`.
+- **Status**: Implemented
+- **Context**: Workshops and demos require reduced client setup friction while preserving deterministic user-bound behavior for bookings and payments.
+- **Consequences**:
+  - `secured` mode preserves existing JWT-protected route behavior
+  - `open` mode bypasses client authentication and impersonates the first persisted user
+  - Startup fails fast in `open` mode when no users are available in `db/users.json`
+  - Authentication middleware keeps one contract for downstream routes by always attaching a user context

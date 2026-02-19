@@ -1,0 +1,124 @@
+{
+  "title": "Feature: Optional Open Security Mode",
+  "body": "Implement optional runtime security mode to support workshops/demos where clients can use protected endpoints without authentication. In `open` mode, the system impersonates the first persisted user and applies all user-bound operations under that identity. In `secured` mode, current JWT authentication behavior remains unchanged.\n\n**Specification**: [feat-open-security-mode.spec.md](specs/feat-open-security-mode.spec.md)\n\n**GitHub Issue**: [#1](https://github.com/AlbertoBasaloLabs/activity-bookings-express/issues/1)\n\n**Reference**: [PRD](/PRD.md) FR8, TR8.\n\n## Implementation Plan\n\n- **Specification**: [feat-open-security-mode.spec.md](specs/feat-open-security-mode.spec.md)\n- **PRD**: [FR8 Optional Open Security Mode](PRD.md#fr8-optional-open-security-mode)\n- **Branch**: feat/open-security-mode",
+  "steps": [
+    {
+      "title": "Step 1: Runtime security-mode configuration",
+      "description": "Define and validate server-level security mode with safe defaults.",
+      "tasks": [
+        {
+          "done": true,
+          "title": "Add security mode type and constants",
+          "description": "Define `secured` and `open` values in shared types/config to avoid magic strings"
+        },
+        {
+          "done": true,
+          "title": "Implement config resolver utility",
+          "description": "Read mode from environment with default `secured` when missing"
+        },
+        {
+          "done": true,
+          "title": "Validate mode at startup",
+          "description": "Fail fast and log a clear error when configuration value is invalid"
+        }
+      ]
+    },
+    {
+      "title": "Step 2: Acting-user resolution service",
+      "description": "Resolve deterministic impersonated identity for open mode.",
+      "tasks": [
+        {
+          "done": true,
+          "title": "Extend user service with first-user lookup",
+          "description": "Add `getFirstUser()` returning first persisted user deterministically"
+        },
+        {
+          "done": true,
+          "title": "Add explicit empty-users error path",
+          "description": "Return/throw domain error when open mode is requested with no available users"
+        },
+        {
+          "done": true,
+          "title": "Keep repository access deterministic",
+          "description": "Use repository ordering consistently so the same acting user is chosen each run"
+        }
+      ]
+    },
+    {
+      "title": "Step 3: Authentication middleware dual behavior",
+      "description": "Support secured and open execution paths without changing route contracts.",
+      "tasks": [
+        {
+          "done": true,
+          "title": "Refactor authenticate middleware by mode",
+          "description": "Branch middleware behavior based on resolved runtime mode"
+        },
+        {
+          "done": true,
+          "title": "Preserve current JWT flow in secured mode",
+          "description": "Keep token extraction, verifyToken checks, and 401 responses unchanged"
+        },
+        {
+          "done": true,
+          "title": "Inject acting user in open mode",
+          "description": "Attach first-user identity to AuthenticatedRequest when token is absent"
+        },
+        {
+          "done": true,
+          "title": "Return standardized error response on open-mode identity failure",
+          "description": "Use existing error format when acting user cannot be resolved"
+        }
+      ]
+    },
+    {
+      "title": "Step 4: Server startup and route integration",
+      "description": "Wire security mode into app bootstrap and protected endpoints.",
+      "tasks": [
+        {
+          "done": true,
+          "title": "Initialize security mode in server bootstrap",
+          "description": "Resolve mode in `src/index.ts` before serving requests"
+        },
+        {
+          "done": true,
+          "title": "Enforce fail-fast rule for open mode without users",
+          "description": "Block startup with clear log/error when no impersonation user exists"
+        },
+        {
+          "done": true,
+          "title": "Verify protected routes still depend on middleware only",
+          "description": "Ensure activities/bookings routes continue receiving auth context through middleware"
+        }
+      ]
+    },
+    {
+      "title": "Step 5: Verification and documentation",
+      "description": "Confirm behavior and document operational usage.",
+      "tasks": [
+        {
+          "done": true,
+          "title": "Add coverage for open mode no-token access",
+          "description": "Test protected endpoints succeed without token when mode is open"
+        },
+        {
+          "done": true,
+          "title": "Add regression checks for secured mode",
+          "description": "Test protected endpoints still return 401 without token in secured mode"
+        },
+        {
+          "done": true,
+          "title": "Add startup failure scenario test",
+          "description": "Validate app fails startup when open mode is enabled and users store is empty"
+        },
+        {
+          "done": true,
+          "title": "Document mode usage in README",
+          "description": "Explain env variable, defaults, and workshop use-case constraints"
+        }
+      ]
+    }
+  ],
+  "labels": [
+    "enhancement"
+  ]
+}

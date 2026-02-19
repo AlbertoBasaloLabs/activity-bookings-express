@@ -1,6 +1,6 @@
+import { JsonRepository } from '../repositories/json.repository';
 import { CreateUserRequest, LoginRequest, User, ValidationError } from '../types/user';
 import { logger } from '../utils/logger';
-import { JsonRepository } from '../repositories/json.repository';
 
 export class UserService {
   private repository: JsonRepository<User>;
@@ -104,6 +104,25 @@ export class UserService {
       return undefined;
     }
     return this.repository.getById(userId);
+  }
+
+  /**
+   * Retrieves the first persisted user in deterministic repository order
+   */
+  getFirstUser(): User | undefined {
+    const users = this.repository.getAll();
+    return users.length > 0 ? users[0] : undefined;
+  }
+
+  /**
+   * Retrieves the first persisted user or throws when no users are available
+   */
+  getFirstUserOrThrow(): User {
+    const firstUser = this.getFirstUser();
+    if (!firstUser) {
+      throw new Error('No users available for open security mode impersonation');
+    }
+    return firstUser;
   }
 
   /**

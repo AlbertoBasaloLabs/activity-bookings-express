@@ -14,7 +14,7 @@
 - **Framework**: Express.js
 - **Database**: JSON file-system store at `/db` with seed data (TR6 implemented)
 - **Security**: JWT tokens for authentication
-- **Testing**: Playwright for E2E tests
+- **Testing**: Node.js built-in test runner (`node --test`) with TypeScript via `tsx`
 - **Logging**: Custom logger utility
 
 ### Development workflow
@@ -62,6 +62,7 @@ npm run typecheck
 - Chat responses must be in the language of the user prompt.
 - Sacrifice grammar for conciseness when needed to fit response limits.
 - This is a windows environment using git bash terminal.
+- Repository remote URL: https://github.com/AlbertoBasalo/activity-bookings-express.git
 - Mind the available **agent skills** when performing tasks.
 - When using templates, ensure to replace {placeholders} with actual values.
 - Follow layered architecture: Routes → Services → Types.

@@ -1,7 +1,7 @@
 # Open Security Mode Specification
 
 - **Reference**: [PRD](/PRD.md) FR1, FR8, TR2, TR8.
-- **Issue**: To be created.
+- **Issue**: [#1](https://github.com/AlbertoBasaloLabs/activity-bookings-express/issues/1)
 - **Status**: Draft
 
 ## Problem Description

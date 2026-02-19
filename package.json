@@ -1,6 +1,6 @@
 {
   "name": "activity-bookings-express",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "A backend API for managing activity bookings",
   "main": "dist/index.js",
   "scripts": {
@@ -8,7 +8,8 @@
     "build": "tsc",
     "prestart": "npm run build",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --test-concurrency=1 --import tsx tests/**/*.spec.ts"
   },
   "keywords": [],
   "author": "",

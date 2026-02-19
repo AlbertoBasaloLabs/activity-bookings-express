@@ -77,7 +77,7 @@ A backend API system for managing activity bookings where registered users can d
 ### FR8: Optional Open Security Mode
 - **Description**: System supports an optional open mode that allows protected workflows without client authentication, using the first user as impersonated identity for user-bound operations.
 - **Priority**: Medium
-- **Status**: NotStarted
+- **Status**: Completed
 
 ## Technical Requirements
 
@@ -114,4 +114,4 @@ A backend API system for managing activity bookings where registered users can d
 ### TR8: Runtime Security Mode Configuration
 - **Description**: Provide a runtime configuration switch for secured or open mode. Secured mode enforces JWT authentication; open mode bypasses client authentication and resolves user context via the first persisted user.
 - **Priority**: Medium
-- **Status**: NotStarted
+- **Status**: Completed

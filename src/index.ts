@@ -1,14 +1,24 @@
-import express from 'express';
 import cors from 'cors';
-import { logger } from './utils/logger';
-import { loadAllData } from './utils/data-loader';
-import authRouter from './routes/auth';
-import usersRouter from './routes/users';
+import express from 'express';
 import activitiesRouter from './routes/activities';
+import authRouter from './routes/auth';
 import bookingsRouter from './routes/bookings';
+import usersRouter from './routes/users';
+import { loadAllData, userRepository } from './utils/data-loader';
+import { logger } from './utils/logger';
+import { getSecurityMode, OPEN_SECURITY_MODE } from './utils/security-mode';
 
 // Load all data on startup
 loadAllData();
+
+const securityMode = getSecurityMode();
+if (securityMode === OPEN_SECURITY_MODE && userRepository.getAll().length === 0) {
+  const startupError = 'Open security mode requires at least one user in db/users.json';
+  logger.error('Server', startupError);
+  throw new Error(startupError);
+}
+
+logger.info('Server', `Security mode: ${securityMode}`);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
