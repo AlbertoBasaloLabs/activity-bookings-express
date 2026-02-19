@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-02-19
+
+### Added
+- Runtime security mode configuration with `SECURITY_MODE` (`secured` default, `open` optional)
+- Open mode impersonation of the first persisted user for protected operations
+- Startup fail-fast validation when `SECURITY_MODE=open` and `db/users.json` is empty
+- API-level tests for secured/open behavior and startup failure scenario in `tests/security-mode.spec.ts`
+- `npm test` script using Node.js built-in test runner with TypeScript support via `tsx`
+
+### Changed
+- Authentication middleware now supports both secured token validation and open-mode impersonation paths
+- User service now exposes deterministic first-user lookup for open-mode identity resolution
+
+### Documentation
+- README updated with security mode usage and workshop-mode examples
+- PRD statuses updated for FR8 and TR8 to Completed
+- ADD updated with ADR 7 for runtime security mode decision
+
 ## [1.10.0] - 2026-01-26
 
 ### Added

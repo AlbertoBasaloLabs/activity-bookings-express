@@ -96,22 +96,22 @@
       "description": "Confirm behavior and document operational usage.",
       "tasks": [
         {
-          "done": false,
+          "done": true,
           "title": "Add coverage for open mode no-token access",
           "description": "Test protected endpoints succeed without token when mode is open"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Add regression checks for secured mode",
           "description": "Test protected endpoints still return 401 without token in secured mode"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Add startup failure scenario test",
           "description": "Validate app fails startup when open mode is enabled and users store is empty"
         },
         {
-          "done": false,
+          "done": true,
           "title": "Document mode usage in README",
           "description": "Explain env variable, defaults, and workshop use-case constraints"
         }

@@ -14,7 +14,7 @@
 - **Framework**: Express.js
 - **Database**: JSON file-system store at `/db` with seed data (TR6 implemented)
 - **Security**: JWT tokens for authentication
-- **Testing**: Playwright for E2E tests
+- **Testing**: Node.js built-in test runner (`node --test`) with TypeScript via `tsx`
 - **Logging**: Custom logger utility
 
 ### Development workflow
