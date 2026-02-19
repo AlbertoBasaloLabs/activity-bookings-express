@@ -21,6 +21,7 @@ A backend API system for managing activity bookings where registered users can d
 
 **In Scope**:
 - User registration and authentication (email-based with JWT)
+- Optional open security mode for workshop/demo usage with deterministic user impersonation
 - Activity management (CRUD operations)
 - Activity status lifecycle management (draft → published → confirmed → done/cancelled)
 - Booking creation with capacity validation
@@ -73,6 +74,11 @@ A backend API system for managing activity bookings where registered users can d
 - **Priority**: Medium
 - **Status**: NotStarted
 
+### FR8: Optional Open Security Mode
+- **Description**: System supports an optional open mode that allows protected workflows without client authentication, using the first user as impersonated identity for user-bound operations.
+- **Priority**: Medium
+- **Status**: NotStarted
+
 ## Technical Requirements
 
 ### TR1: RESTful API Architecture
@@ -104,3 +110,8 @@ A backend API system for managing activity bookings where registered users can d
 - **Description**: Use JSON files as the persistence layer in a `/db` folder at project root. The system loads and persists entities via JSON files. Include seed (sample) data so the application starts with predefined activities for development, demos, and testing.
 - **Priority**: Medium
 - **Status**: Completed
+
+### TR8: Runtime Security Mode Configuration
+- **Description**: Provide a runtime configuration switch for secured or open mode. Secured mode enforces JWT authentication; open mode bypasses client authentication and resolves user context via the first persisted user.
+- **Priority**: Medium
+- **Status**: NotStarted
