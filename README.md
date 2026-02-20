@@ -59,6 +59,16 @@ SECURITY_MODE=open npm run dev
 
 See detailed behavior and acceptance criteria in [specs/](specs/).
 
+## API DTO compatibility
+
+- API responses are aligned with DTO contracts in `client/`.
+- Resource ids in API payloads are numeric (`id`, `userId`, `activityId`).
+- Internal persisted ids remain string-based (`resource-<n>`) and are mapped at the HTTP boundary.
+- Booking responses include nested `payment` shape:
+  - `method`: `none | cash | creditCard | paypal`
+  - `status`: `none | pending | paid | refunded`
+- Date fields are emitted as ISO strings suitable for client-side `Date` parsing.
+
 
 ---
 
