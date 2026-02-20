@@ -1,14 +1,15 @@
 import { Request, Response, Router } from 'express';
-import { BookingService } from '../services/booking.service';
-import { ActivityService } from '../services/activity.service';
-import { PaymentService } from '../services/payment.service';
-import { MockPaymentGateway } from '../services/mock-payment-gateway';
-import { CreateBookingRequest } from '../types/booking';
-import { AuthenticatedRequest } from '../types/auth';
-import { ErrorResponse } from '../types/error';
 import { authenticateToken } from '../middleware/auth.middleware';
+import { ActivityService } from '../services/activity.service';
+import { BookingService } from '../services/booking.service';
+import { MockPaymentGateway } from '../services/mock-payment-gateway';
+import { PaymentService } from '../services/payment.service';
+import { AuthenticatedRequest } from '../types/auth';
+import { CreateBookingRequest } from '../types/booking';
+import { ErrorResponse } from '../types/error';
+import { activityRepository, bookingRepository, paymentRepository } from '../utils/data-loader';
+import { mapBookingToApiDto, toInternalResourceId } from '../utils/dto-mappers';
 import { logger } from '../utils/logger';
-import { activityRepository, paymentRepository, bookingRepository } from '../utils/data-loader';
 
 const router = Router();
 const activityService = new ActivityService(activityRepository);
@@ -39,11 +40,17 @@ router.get('/', authenticateToken, (req: Request, res: Response) => {
     // Filter by activityId if provided as query parameter
     const activityId = req.query.activityId as string | undefined;
     if (activityId) {
-      bookings = bookings.filter((booking) => booking.activityId === activityId);
+      const internalActivityId = toInternalResourceId(activityId, 'activity');
+      bookings = bookings.filter((booking) => booking.activityId === internalActivityId);
     }
 
-    const enrichedBookings = bookings.map((booking) => bookingService.enrichBookingWithActivity(booking));
-    res.status(200).json(enrichedBookings);
+    const response = bookings.map((booking) => {
+      const activity = activityService.getById(booking.activityId);
+      const payment = booking.paymentId ? paymentService.getById(booking.paymentId) : undefined;
+      return mapBookingToApiDto(booking, activity, payment);
+    });
+
+    res.status(200).json(response);
   } catch (error) {
     logger.error('BookingRoute', 'Failed to retrieve bookings', error);
     const errorResponse: ErrorResponse = {
@@ -72,10 +79,11 @@ router.get('/:id', authenticateToken, (req: Request, res: Response) => {
       return res.status(401).json(errorResponse);
     }
 
-    const bookingId = req.params.id;
+    const bookingId = toInternalResourceId(req.params.id, 'booking');
     const booking = bookingService.getUserBookingById(bookingId, authReq.user.id);
-    const enrichedBooking = bookingService.enrichBookingWithActivity(booking);
-    res.status(200).json(enrichedBooking);
+    const activity = activityService.getById(booking.activityId);
+    const payment = booking.paymentId ? paymentService.getById(booking.paymentId) : undefined;
+    res.status(200).json(mapBookingToApiDto(booking, activity, payment));
   } catch (error) {
     logger.error('BookingRoute', 'Failed to retrieve booking', error);
     const errorResponse: ErrorResponse = {
@@ -97,7 +105,16 @@ router.get('/:id', authenticateToken, (req: Request, res: Response) => {
  */
 router.post('/', authenticateToken, (req: Request, res: Response) => {
   const authReq = req as AuthenticatedRequest;
-  const errors = bookingService.validateCreate(req.body);
+  const rawBody = req.body as Record<string, unknown>;
+  const normalizedBody: Record<string, unknown> = {
+    ...rawBody,
+    activityId:
+      rawBody && rawBody.activityId !== undefined
+        ? toInternalResourceId(rawBody.activityId as string | number, 'activity')
+        : rawBody?.activityId,
+  };
+
+  const errors = bookingService.validateCreate(normalizedBody);
   if (errors.length > 0) {
     const errorResponse: ErrorResponse = {
       message: 'Validation failed',
@@ -115,8 +132,10 @@ router.post('/', authenticateToken, (req: Request, res: Response) => {
       return res.status(401).json(errorResponse);
     }
 
-    const booking = bookingService.create(req.body as CreateBookingRequest, authReq.user.id);
-    res.status(201).json(booking);
+    const booking = bookingService.create(normalizedBody as unknown as CreateBookingRequest, authReq.user.id);
+    const activity = activityService.getById(booking.activityId);
+    const payment = booking.paymentId ? paymentService.getById(booking.paymentId) : undefined;
+    res.status(201).json(mapBookingToApiDto(booking, activity, payment));
   } catch (error) {
     logger.error('BookingRoute', 'Failed to create booking', error);
     let message = 'Failed to create booking';
