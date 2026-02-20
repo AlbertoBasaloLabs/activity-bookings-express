@@ -1,11 +1,12 @@
 import { Request, Response, Router } from 'express';
+import { authenticateToken } from '../middleware/auth.middleware';
 import { ActivityService } from '../services/activity.service';
 import { ActivityStatus, CreateActivityRequest, UpdateActivityRequest } from '../types/activity';
 import { AuthenticatedRequest } from '../types/auth';
 import { ErrorResponse } from '../types/error';
-import { authenticateToken } from '../middleware/auth.middleware';
-import { logger } from '../utils/logger';
 import { activityRepository } from '../utils/data-loader';
+import { mapActivityToApiDto, toInternalResourceId } from '../utils/dto-mappers';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const activityService = new ActivityService(activityRepository);
@@ -87,7 +88,7 @@ router.post('/', authenticateToken, (req: Request, res: Response) => {
     }
 
     const activity = activityService.create(normalizedBody as unknown as CreateActivityRequest, authReq.user.id);
-    res.status(201).json(activity);
+    res.status(201).json(mapActivityToApiDto(activity));
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to create activity', error);
     const errorResponse: ErrorResponse = {
@@ -126,7 +127,7 @@ router.get('/', (req: Request, res: Response) => {
       activities = activityService.getAll();
     }
 
-    res.status(200).json(activities);
+    res.status(200).json(activities.map(mapActivityToApiDto));
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to get activities', error);
     const errorResponse: ErrorResponse = {
@@ -145,7 +146,8 @@ router.get('/', (req: Request, res: Response) => {
  */
 router.get('/:id', (req: Request, res: Response) => {
   try {
-    const activity = activityService.getById(req.params.id);
+    const activityId = toInternalResourceId(req.params.id, 'activity');
+    const activity = activityService.getById(activityId);
     if (!activity) {
       const errorResponse: ErrorResponse = {
         message: 'Activity not found',
@@ -153,7 +155,7 @@ router.get('/:id', (req: Request, res: Response) => {
       };
       return res.status(404).json(errorResponse);
     }
-    res.status(200).json(activity);
+    res.status(200).json(mapActivityToApiDto(activity));
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to get activity', error);
     const errorResponse: ErrorResponse = {
@@ -172,7 +174,8 @@ router.get('/:id', (req: Request, res: Response) => {
  */
 router.put('/:id', authenticateToken, (req: Request, res: Response) => {
   const authReq = req as AuthenticatedRequest;
-  const existingActivity = activityService.getById(req.params.id);
+  const activityId = toInternalResourceId(req.params.id, 'activity');
+  const existingActivity = activityService.getById(activityId);
   
   if (!existingActivity) {
     const errorResponse: ErrorResponse = {
@@ -200,8 +203,8 @@ router.put('/:id', authenticateToken, (req: Request, res: Response) => {
       return res.status(401).json(errorResponse);
     }
 
-    const activity = activityService.update(req.params.id, req.body as UpdateActivityRequest, authReq.user.id);
-    res.status(200).json(activity);
+    const activity = activityService.update(activityId, req.body as UpdateActivityRequest, authReq.user.id);
+    res.status(200).json(mapActivityToApiDto(activity));
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to update activity', error);
     let message = 'Failed to update activity';
@@ -233,6 +236,7 @@ router.put('/:id', authenticateToken, (req: Request, res: Response) => {
  */
 router.delete('/:id', authenticateToken, (req: Request, res: Response) => {
   const authReq = req as AuthenticatedRequest;
+  const activityId = toInternalResourceId(req.params.id, 'activity');
 
   try {
     if (!authReq.user) {
@@ -243,7 +247,7 @@ router.delete('/:id', authenticateToken, (req: Request, res: Response) => {
       return res.status(401).json(errorResponse);
     }
 
-    const deleted = activityService.delete(req.params.id, authReq.user.id);
+    const deleted = activityService.delete(activityId, authReq.user.id);
     if (!deleted) {
       const errorResponse: ErrorResponse = {
         message: 'Activity not found',
@@ -278,6 +282,7 @@ router.delete('/:id', authenticateToken, (req: Request, res: Response) => {
  */
 router.patch('/:id/status', authenticateToken, (req: Request, res: Response) => {
   const authReq = req as AuthenticatedRequest;
+  const activityId = toInternalResourceId(req.params.id, 'activity');
 
   // Validate request body
   if (!req.body || typeof req.body !== 'object') {
@@ -315,11 +320,11 @@ router.patch('/:id/status', authenticateToken, (req: Request, res: Response) => 
     }
 
     const activity = activityService.transitionStatus(
-      req.params.id,
+      activityId,
       req.body.status as ActivityStatus,
       authReq.user.id
     );
-    res.status(200).json(activity);
+    res.status(200).json(mapActivityToApiDto(activity));
   } catch (error) {
     logger.error('ActivityRoute', 'Failed to transition activity status', error);
     let message = 'Failed to transition activity status';

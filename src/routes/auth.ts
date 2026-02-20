@@ -1,11 +1,12 @@
 import { Request, Response, Router } from 'express';
 import { UserService } from '../services/user.service';
-import { generateToken } from '../utils/jwt';
 import { AuthResponse } from '../types/auth';
-import { LoginRequest } from '../types/user';
 import { ErrorResponse } from '../types/error';
-import { logger } from '../utils/logger';
+import { LoginRequest } from '../types/user';
 import { userRepository } from '../utils/data-loader';
+import { mapAuthToApiDto } from '../utils/dto-mappers';
+import { generateToken } from '../utils/jwt';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const userService = new UserService(userRepository);
@@ -27,15 +28,7 @@ router.post('/', (req: Request, res: Response) => {
 
   try {
     const user = userService.authenticate(req.body as LoginRequest);
-    const response: AuthResponse = {
-      user: {
-        id: parseInt(user.id.replace('user-', ''), 10) || 0,
-        username: user.username,
-        email: user.email,
-        terms: user.terms,
-      },
-      accessToken: generateToken(user.id, user.email),
-    };
+    const response: AuthResponse = mapAuthToApiDto(user, generateToken(user.id, user.email));
     res.status(200).json(response);
   } catch (error) {
     logger.error('AuthRoute', 'Failed to authenticate user', error);

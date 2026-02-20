@@ -99,10 +99,17 @@ export class UserService {
    * Returns undefined if not found
    */
   getByEmail(email: string): User | undefined {
-    const userId = this.emailIndex.get(email.toLowerCase());
+    const normalizedEmail = email.toLowerCase();
+    let userId = this.emailIndex.get(normalizedEmail);
+    if (!userId) {
+      this.rebuildEmailIndex();
+      userId = this.emailIndex.get(normalizedEmail);
+    }
+
     if (!userId) {
       return undefined;
     }
+
     return this.repository.getById(userId);
   }
 

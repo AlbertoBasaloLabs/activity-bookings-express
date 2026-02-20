@@ -287,3 +287,14 @@ The system uses a repository pattern with `JsonRepository` implementation that p
   - `open` mode bypasses client authentication and impersonates the first persisted user
   - Startup fails fast in `open` mode when no users are available in `db/users.json`
   - Authentication middleware keeps one contract for downstream routes by always attaching a user context
+
+### ADR 8: API DTO Compatibility Boundary
+- **Decision**: Treat `client/` DTOs as the canonical external API transport contract and map internal domain entities to those DTOs at route boundaries.
+- **Status**: Implemented
+- **Context**: Internal persistence uses string ids (`resource-<n>`) and service-level entities with fields not always matching frontend expectations. Contract drift caused integration friction and client-side remapping.
+- **Consequences**:
+  - Response payloads now expose numeric identifiers (`id`, `userId`, `activityId`) to match client types
+  - Route inputs accept numeric identifiers and normalize to internal resource ids
+  - Booking responses expose nested `payment` shape compatible with client contract
+  - Internal entities and persistence schema remain unchanged, reducing migration risk
+  - DTO contract verification is enforced by E2E tests (`tests/dto-alignment.spec.ts`)

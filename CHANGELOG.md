@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-02-20
+
+### Added
+- API transport DTO layer for client-compatible response contracts (`src/types/api-dto.ts`)
+- DTO mapping utilities for id normalization and response shaping (`src/utils/dto-mappers.ts`)
+- End-to-end contract tests for auth, activities, and bookings payload shapes in `tests/dto-alignment.spec.ts`
+- Feature and implementation specs for API DTO alignment in `specs/bug-api-dto-client-alignment.spec.md` and `specs/bug-api-dto-client-alignment.plan.md`
+
+### Changed
+- Auth routes (`POST /users`, `POST /login`) now consistently return client-compatible `user` payloads with numeric `id`
+- Activity routes now return numeric `id`/`userId` and accept numeric path ids by mapping to internal resource ids
+- Booking routes now accept numeric `activityId`/`id` input and return client-compatible booking DTO with nested `payment`
+
+### Fixed
+- User lookup now refreshes email index on cache miss, preventing login failures after repository data changes
+
+### Documentation
+- README updated with API DTO compatibility notes and date/id contract expectations
+- PRD TR3 status updated to Completed for TypeScript + client DTO alignment
+- ADD updated with ADR 8 documenting API DTO compatibility boundary decision
+
 ## [1.11.0] - 2026-02-19
 
 ### Added
