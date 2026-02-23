@@ -1,3 +1,4 @@
+import { JsonRepository } from '../repositories/json.repository';
 import {
   Activity,
   ActivityStatus,
@@ -6,46 +7,29 @@ import {
   ValidationError,
 } from '../types/activity';
 import { logger } from '../utils/logger';
-import { JsonRepository } from '../repositories/json.repository';
 
 export class ActivityService {
+  private static readonly VALID_STATUSES: ActivityStatus[] = [
+    'draft',
+    'published',
+    'confirmed',
+    'sold-out',
+    'done',
+    'cancelled',
+  ];
+
   private repository: JsonRepository<Activity>;
   private nextId = 1;
 
   constructor(repository?: JsonRepository<Activity>) {
-    // Use provided repository or create default in-memory one for backward compatibility
     if (repository) {
       this.repository = repository;
-      // Calculate nextId from repository
-      const allActivities = this.repository.getAll();
-      let maxId = 0;
-      for (const activity of allActivities) {
-        const match = activity.id.match(/-(\d+)$/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > maxId) {
-            maxId = num;
-          }
-        }
-      }
-      this.nextId = maxId + 1;
     } else {
-      // Fallback to in-memory Map for backward compatibility
       this.repository = new JsonRepository<Activity>('db/activities.json', 'db/seed/activities.json');
       this.repository.load();
-      const allActivities = this.repository.getAll();
-      let maxId = 0;
-      for (const activity of allActivities) {
-        const match = activity.id.match(/-(\d+)$/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > maxId) {
-            maxId = num;
-          }
-        }
-      }
-      this.nextId = maxId + 1;
     }
+
+    this.nextId = this.calculateNextId();
   }
 
   /**
@@ -335,11 +319,10 @@ export class ActivityService {
 
     // Validate status (optional, defaults to 'draft')
     if (req.status !== undefined && req.status !== null) {
-      const validStatuses = ['draft', 'published', 'confirmed', 'sold-out', 'done', 'cancelled'];
-      if (typeof req.status !== 'string' || !validStatuses.includes(req.status)) {
+      if (typeof req.status !== 'string' || !ActivityService.VALID_STATUSES.includes(req.status as ActivityStatus)) {
         errors.push({
           field: 'status',
-          message: `Status must be one of: ${validStatuses.join(', ')}`,
+          message: `Status must be one of: ${ActivityService.VALID_STATUSES.join(', ')}`,
         });
       }
     }
@@ -429,12 +412,24 @@ export class ActivityService {
       });
     }
 
-    // Validate status if provided - status changes must go through PATCH /activities/:id/status endpoint
+    // Validate status if provided - allow via PUT while enforcing valid values and transitions
     if (req.status !== undefined) {
-      errors.push({
-        field: 'status',
-        message: 'Status cannot be changed via PUT endpoint. Use PATCH /activities/:id/status to transition status.',
-      });
+      if (typeof req.status !== 'string' || !ActivityService.VALID_STATUSES.includes(req.status as ActivityStatus)) {
+        errors.push({
+          field: 'status',
+          message: `Status must be one of: ${ActivityService.VALID_STATUSES.join(', ')}`,
+        });
+      } else {
+        const currentStatus = existingActivity.status;
+        const targetStatus = req.status as ActivityStatus;
+        if (currentStatus !== targetStatus && !this.isValidStatusTransition(currentStatus, targetStatus)) {
+          const validTransitions = this.getValidTransitions(currentStatus);
+          errors.push({
+            field: 'status',
+            message: `Invalid status transition from ${currentStatus} to ${targetStatus}. Valid transitions are: ${validTransitions.join(', ') || 'none (terminal state)'}`,
+          });
+        }
+      }
     }
 
     return errors;
@@ -515,5 +510,22 @@ export class ActivityService {
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
       .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  }
+
+  private calculateNextId(): number {
+    let maxId = 0;
+    for (const activity of this.repository.getAll()) {
+      const match = activity.id.match(/-(\d+)$/);
+      if (!match) {
+        continue;
+      }
+
+      const parsedId = parseInt(match[1], 10);
+      if (parsedId > maxId) {
+        maxId = parsedId;
+      }
+    }
+
+    return maxId + 1;
   }
 }
