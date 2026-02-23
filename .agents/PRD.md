@@ -1,74 +1,117 @@
-# AstroBookings Product Requirements Document
+# ActivityBookings Product Requirements Document
 
-A backend API for managing and booking seats on rocket launches for space travel.
+A backend API system for managing activity bookings where registered users can discover, book, and pay for scheduled activities. The system handles activity lifecycle management, user authentication, booking reservations with capacity constraints, and payment processing through a mock gateway.
 
 ## Vision and Scope
 
-AstroBookings provides a RESTful API that enables travel agents and administrators to manage rocket inventory, schedule launches with pricing and capacity constraints, and allow customers to book seats on scheduled space flights. The system validates all business rules (capacity limits, minimum passengers, rocket availability) and tracks the complete lifecycle of launches from scheduling to completion.
+**Vision**: Provide a reliable, secure, and scalable backend API that enables activity providers to offer bookable activities to end users, with automated booking management, payment processing, and capacity control.
 
-**Target Users:**
-- **Travel Agents**: Browse available rockets and launches to match customer requirements
-- **System Administrators**: Manage rocket inventory and schedule launches
-- **Customers**: View available launches and book seats (via integrated booking systems)
-- **Booking Systems**: Automated integration for seat reservations and availability checks
+**Target Users**: 
+- **End Users**: Individuals who want to book activities (identified by email, with username and password)
+- **Activity Providers**: Organizations or individuals offering activities (implicitly through the system)
 
-**Scope:**
-The product focuses on backend API operations for rocket and launch management, customer bookings, and basic payment processing. It provides RESTful endpoints with comprehensive validation, error handling, and logging capabilities.
+**Problems Solved**:
+- Centralized activity discovery and booking management
+- Automated capacity control to prevent overbooking
+- Secure user authentication and authorization
+- Integrated payment processing workflow
+- Activity lifecycle management from creation to completion
 
-**Out of Scope:**
-- User authentication and authorization (demo system)
-- Database persistence (in-memory storage only)
-- Production-grade security features
-- Payment gateway integration (mock only)
-- Frontend user interface
-- Real-time seat availability websockets
-- Multi-currency support
-- Refund processing
+### Scope
+
+**In Scope**:
+- User registration and authentication (email-based with JWT)
+- Optional open security mode for workshop/demo usage with deterministic user impersonation
+- Activity management (CRUD operations)
+- Activity status lifecycle management (draft → published → confirmed → done/cancelled)
+- Booking creation with capacity validation
+- Payment processing integration (mock gateway)
+- Activity availability and seat management
+
+**Out of Scope**:
+- Frontend user interface (backend API only)
+- Real payment gateway integration (mock implementation)
+- Activity provider management UI
+- Email notifications
+- Activity search and filtering (basic retrieval only)
+- Booking cancellation by users
+- Refund processing automation
 
 ## Functional Requirements
 
-### FR1: Rocket Inventory Management
-Administrators can create, read, update, and delete rockets with specific ranges (suborbital, orbital, moon, mars) and passenger capacity (1-10 seats). The system validates rocket properties including name uniqueness, valid range values, and capacity constraints. Rockets can be filtered by range and minimum capacity, with paginated listings for efficient browsing.
-- **Status**: Implemented
+### FR1: User Authentication and Management
+- **Description**: Users can register and authenticate using email and password, receiving JWT tokens for subsequent API access.
+- **Priority**: High
+- **Status**: Completed
 
-### FR2: Launch Scheduling and Management
-Administrators can schedule launches for specific rockets with configurable pricing, scheduled dates, and minimum passenger thresholds. The system validates that minimum passengers don't exceed rocket capacity, scheduled dates are in the future, and prices are positive. Launch status transitions through a lifecycle (scheduled → active → completed/cancelled) with automatic availability calculation based on rocket capacity minus booked seats.
-- **Status**: Implemented
+### FR2: Activity Management
+- **Description**: System supports creating, reading, updating, and deleting activities with properties including name, slug, price, date, duration, location, participant thresholds (min/max), and status.
+- **Priority**: High
+- **Status**: InProgress
 
-### FR3: Customer Registration and Profile Management
-Customers are identified by unique email addresses and maintain profiles with name and phone number. The system validates email uniqueness and format, stores customer contact information, and allows profile updates. Multiple bookings per customer are supported with full booking history tracking.
-- **Status**: Implemented
+### FR3: Activity Status Lifecycle
+- **Description**: Activities transition through statuses: draft → published → confirmed → done or cancelled, with appropriate business rules for each transition.
+- **Priority**: High
+- **Status**: Completed
 
-### FR4: Seat Booking and Reservation
-Customers can book single or multiple seats on scheduled launches based on available inventory. The system validates seat availability in real-time, prevents overbooking beyond rocket capacity, calculates total booking cost based on seat quantity and launch pricing, and confirms bookings atomically or rolls back on failure.
-- **Status**: Implemented
+### FR4: Booking Creation with Capacity Validation
+- **Description**: Users can book activities, but the system prevents bookings that would exceed available seats (maxParticipants minus existing bookings).
+- **Priority**: High
+- **Status**: Completed
 
 ### FR5: Payment Processing
-Customers are billed upon successful booking through a mock payment gateway. The system generates payment records with booking references, processes payments with success/failure handling, and prevents booking confirmation until payment succeeds. Payment status is tracked for each booking transaction.
+- **Description**: Upon booking creation, users are automatically billed through a mock payment gateway, with payment status tracked (pending, paid, refunded).
+- **Priority**: High
+- **Status**: Completed
+
+### FR6: Booking Retrieval
+- **Description**: Users can retrieve their own bookings, and the system provides booking details including activity information, participant count, and payment status.
+- **Priority**: Medium
+- **Status**: Completed
+
+### FR7: Activity Availability Query
+- **Description**: System provides endpoints to check activity availability, showing remaining seats and current booking count.
+- **Priority**: Medium
 - **Status**: NotStarted
 
-### FR6: Launch Status Lifecycle Management
-Launches progress through defined status transitions: scheduled (initial creation), active (accepting bookings), completed (launch executed successfully), suspended (temporarily unavailable), or cancelled (permanently stopped). Status changes are validated according to business rules and trigger appropriate notifications through the logging system.
-- **Status**: InProgress
+### FR8: Optional Open Security Mode
+- **Description**: System supports an optional open mode that allows protected workflows without client authentication, using the first user as impersonated identity for user-bound operations.
+- **Priority**: Medium
+- **Status**: Completed
 
 ## Technical Requirements
 
-### TR1: RESTful API Architecture with Express.js
-The system is built as a stateless RESTful API using Express.js 4.21 on Node.js 22 with TypeScript 5.6. All endpoints follow REST conventions (GET, POST, PUT, DELETE) with appropriate HTTP status codes (200, 201, 400, 404, 500), return JSON responses with consistent error formats including field-level validation details, and use type-safe implementations for request/response handling.
-- **Status**: Implemented
+### TR1: RESTful API Architecture
+- **Description**: Implement a layered Express.js API following RESTful principles with clear separation between controllers, services, and data access layers.
+- **Priority**: High
+- **Status**: NotStarted
 
-### TR2: In-Memory Data Storage
-The system uses in-memory data stores for rockets, launches, customers, and bookings without database persistence. This approach is suitable for demonstration and training purposes. Data structures use TypeScript types for compile-time safety and support CRUD operations with filtering and pagination capabilities.
-- **Status**: Implemented
+### TR2: JWT-based Authentication
+- **Description**: Secure API endpoints using JWT tokens for authentication, with token validation middleware protecting authenticated routes.
+- **Priority**: High
+- **Status**: Completed
 
-### TR3: Comprehensive Validation and Error Handling
-All user inputs are validated with custom validation utilities that check data types, ranges, and business rules. The system uses custom error classes (AppError, ValidationError) for structured error responses, returns field-level validation errors with descriptive messages, and logs all errors with appropriate severity levels (info, warn, error, debug).
-- **Status**: Implemented
+### TR3: TypeScript Implementation
+- **Description**: All code must be written in TypeScript with strict typing, following the project's TypeScript coding standards and using the client type definitions from the types folder.
+- **Priority**: High
+- **Status**: Completed
 
-### TR4: Observable Operations with Leveled Logging
-The system implements structured logging with configurable log levels (info, warn, error, debug) controlled via LOG_LEVEL environment variable. All operations log significant events including entity creation, updates, deletions, validation failures, and system errors. Logs include ISO timestamps and contextual information for debugging and monitoring.
-- **Status**: Implemented
+### TR4: Input Validation and Error Handling
+- **Description**: All API endpoints must validate input data and return structured error responses with appropriate HTTP status codes. All error responses follow a standardized format: `{ message: string, errors: ValidationError[] }` where `message` provides a summary of the error and `errors` is an array of field-specific validation errors (empty array for non-validation errors).
+- **Priority**: High
+- **Status**: Completed
 
-### TR5: Automated Testing with Playwright and Vitest
-End-to-end acceptance tests validate all acceptance criteria using Playwright 1.58. Tests cover happy paths, validation errors, edge cases, and business rule enforcement. The test suite validates HTTP endpoints, response formats, status codes, and error messages with comprehensive assertions for data integrity. Unit tests validate business logic in services and utilities using Vitest with mocked dependencies for isolated testing.
-- **Status**: Implemented
+### TR5: Mock Payment Gateway Integration
+- **Description**: Integrate with a mock payment gateway service that simulates payment processing, handling success and failure scenarios.
+- **Priority**: Medium
+- **Status**: Completed
+
+### TR6: JSON File-System Store
+- **Description**: Use JSON files as the persistence layer in a `/db` folder at project root. The system loads and persists entities via JSON files. Include seed (sample) data so the application starts with predefined activities for development, demos, and testing.
+- **Priority**: Medium
+- **Status**: Completed
+
+### TR8: Runtime Security Mode Configuration
+- **Description**: Provide a runtime configuration switch for secured or open mode. Secured mode enforces JWT authentication; open mode bypasses client authentication and resolves user context via the first persisted user.
+- **Priority**: Medium
+- **Status**: Completed

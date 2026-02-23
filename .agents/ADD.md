@@ -1,94 +1,300 @@
-# AstroBookings Architectural Design Document
+# ActivityBookings Architectural Design Document
 
-A backend API for managing rockets, launches, and future bookings for space travel.
+A RESTful backend API built with Express.js and TypeScript that manages activity bookings, user authentication, and payment processing through a mock gateway. The system follows a layered architecture pattern with clear separation between HTTP handling, business logic, and data models.
 
 ### Table of Contents
 - [Stack and tooling](#stack-and-tooling)
 - [Systems Architecture](#systems-architecture)
 - [Software Architecture](#software-architecture)
+- [Data storage and seed data](#data-storage-and-seed-data)
 - [Architecture Decisions Record (ADR)](#architecture-decisions-record-adr)
 
 ## Stack and tooling
 
 ### Technology Stack
-- Language: TypeScript 5.6
-- Runtime: Node.js 22
-- Framework: Express 4.21
-- Data store: In-memory collections
-- Testing: Playwright 1.58 (E2E), Vitest 4.0 (unit)
-- Logging: Console logger with levels
+- **Runtime**: Node.js
+- **Language**: TypeScript (strict mode)
+- **Framework**: Express.js
+- **Authentication**: JWT (JSON Web Tokens)
+- **Data Storage**: JSON file-system store at `/db` (project root), with seed data for activities
+- **Validation**: Custom validation in service layer
+- **Logging**: Custom logger utility
+- **Development**: tsx for TypeScript execution
+- **Build Tool**: TypeScript compiler (tsc)
 
 ### Development Tools
-- Build: `tsc`
-- Dev server: `tsx watch`
-- Tests: `playwright test` (E2E), `vitest` (unit)
-- Testing: Vitest 4.0, @vitest/coverage-v8 4.0
-- Package manager: npm
-- Linting: None configured
-- Deployment: None configured
+- **Package Manager**: npm
+- **Type Checking**: TypeScript compiler (`tsc`)
+- **Development Server**: tsx (TypeScript execution)
+- **Scripts**:
+  - `dev`: Run development server with hot reload
+  - `build`: Compile TypeScript to JavaScript
+  - `start`: Run production build
+  - `typecheck`: Type checking only
+- **Environment**: Windows with Git Bash terminal
+- **Version Control**: Git (default branch: master)
 
 ## Systems Architecture
 
-AstroBookings is a stateless REST API that exposes endpoints for rockets and
-launches. It validates inputs, enforces capacity rules, and returns structured
-JSON responses. The system is designed for demo use with no persistence or
-security layer.
+The ActivityBookings API is a monolithic backend service that exposes RESTful endpoints for activity and booking management. The system handles user authentication, activity lifecycle management, booking creation with capacity validation, and payment processing.
 
-```mermaid
-flowchart LR
-  Client[API Client] --> API[Express Routes]
-  API --> Service[Service Layer]
-  Service --> Repo[Repository Layer]
-  Repo --> Store[In-memory Store]
-  API --> Logger[Logger]
-  API --> Error[Error Handler]
-  E2E[Playwright E2E Tests] -.-> API
-  Unit[Vitest Unit Tests] -.-> Service
-  Unit -.-> Utils[Utils]
+### Main Components
+
+1. **HTTP Layer (Routes)**: Express.js routers that handle HTTP requests, extract request data, validate input, and return appropriate responses
+2. **Business Logic Layer (Services)**: Domain services that implement business rules, validation, and orchestrate operations
+3. **Domain Models (Types)**: TypeScript type definitions representing domain entities (User, Activity, Booking)
+4. **Authentication Middleware**: JWT token validation middleware protecting authenticated routes
+5. **Payment Gateway Adapter**: Mock payment gateway integration for processing payments
+
+### Component Interactions
+
+```
+Client Request
+    ↓
+Express App (index.ts)
+    ↓
+Authentication Middleware (JWT validation)
+    ↓
+Route Handler (routes/*.ts)
+    ↓
+Service Layer (services/*.ts)
+    ↓
+Domain Models (types/*.ts)
+    ↓
+Response
+```
+
+### Architecture Diagram (C4 Model - Level 1: System Context)
+
+```
+┌─────────────┐
+│   Client    │
+│  (Frontend) │
+└──────┬──────┘
+       │ HTTP/REST
+       │
+┌──────▼──────────────────────────────┐
+│   ActivityBookings API               │
+│  ┌────────────────────────────────┐  │
+│  │  Authentication (JWT)          │  │
+│  │  Activity Management           │  │
+│  │  Booking Management            │  │
+│  │  Payment Processing (Mock)     │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
 ```
 
 ## Software Architecture
 
-The codebase follows a layered modular design.
+### Layered Architecture Pattern
 
-- Routes define REST endpoints and delegate to services.
-- Services implement business rules and orchestration.
-- Repositories encapsulate data access for in-memory stores.
-- Stores keep entity arrays and ids for rockets and launches.
-- Utils provide validation, logging, and error handling helpers.
-- Types define shared domain models and API response shapes.
+The application follows a three-layer architecture with clear separation of concerns:
 
-Data flow: request -> route -> validation -> service -> repository -> store.
-Errors are normalized by the error handler and returned as JSON.
+```
+┌─────────────────────────────────┐
+│   Routes Layer (HTTP)           │  ← Request/Response handling
+│   - Request validation          │
+│   - Status code management      │
+│   - Error formatting            │
+└──────────────┬──────────────────┘
+               │
+┌──────────────▼──────────────────┐
+│   Services Layer (Business)     │  ← Business logic
+│   - Domain rules                │
+│   - Validation                  │
+│   - Orchestration               │
+└──────────────┬──────────────────┘
+               │
+┌──────────────▼──────────────────┐
+│   Types Layer (Domain Models)   │  ← Data structures
+│   - Entity definitions          │
+│   - DTOs                        │
+│   - Type guards                 │
+└─────────────────────────────────┘
+```
+
+### Project Structure
+
+```
+├── db/                          # JSON file-system store (TR6)
+│   ├── seed/                    # Seed (sample) data loaded on init
+│   │   └── activities.json      # Predefined activities for dev/demos
+│   ├── activities.json          # Persistent activity data (when TR6 implemented)
+│   ├── bookings.json            # Persistent booking data (when TR6 implemented)
+│   ├── users.json               # Persistent user data (when TR6 implemented)
+│   └── payments.json            # Persistent payment data (when TR6 implemented)
+└── src/
+│   ├── index.ts                 # Express app setup, middleware, route registration
+│   ├── routes/                  # HTTP layer - one file per resource
+│   │   ├── auth.ts              # Authentication routes (register, login)
+│   │   ├── activities.ts        # Activity CRUD operations
+│   │   └── bookings.ts          # Booking operations
+│   ├── services/                # Business logic - one service per domain
+│   │   ├── auth.service.ts      # Authentication and JWT token management
+│   │   ├── activity.service.ts  # Activity business logic and lifecycle
+│   │   ├── booking.service.ts   # Booking creation with capacity validation
+│   │   └── payment.service.ts   # Payment processing (mock gateway)
+│   ├── middleware/              # Express middleware
+│   │   └── auth.middleware.ts   # JWT token validation
+│   ├── types/                   # Type definitions - one file per domain
+│   │   ├── user.ts              # User entity and DTOs
+│   │   ├── activity.ts          # Activity entity and DTOs
+│   │   ├── booking.ts           # Booking entity and DTOs
+│   │   └── payment.ts           # Payment-related types
+│   ├── repositories/            # Data access layer
+│   │   ├── base.repository.ts   # Repository interface
+│   │   └── json.repository.ts   # JSON file-based implementation
+│   └── utils/                   # Shared utilities
+│       ├── logger.ts            # Logging utility
+│       ├── file-storage.ts       # File I/O utilities
+│       └── data-loader.ts       # Startup data loading
+```
+
+### Design Patterns
+
+- **Layered Architecture**: Separation of HTTP, business logic, and data layers
+- **Service Pattern**: Business logic encapsulated in service classes
+- **Repository Pattern**: Data access abstraction (in-memory Map-based initially; JSON file-system at `/db` per TR6)
+- **Middleware Pattern**: JWT authentication as Express middleware
+- **Adapter Pattern**: Mock payment gateway adapter for external integration
+- **Null Object Pattern**: NULL_* constants for safe defaults (from client types)
+
+### Data Flow
+
+1. **Authentication Flow**:
+   - User registers/logs in → Service validates credentials → JWT token generated → Token returned to client
+
+2. **Activity Management Flow**:
+   - Authenticated request → Route extracts data → Service validates and processes → Activity created/updated → Response returned
+
+3. **Booking Flow**:
+   - Authenticated request → Route extracts booking data → Service validates capacity → Payment processed → Booking created → Response returned
+
+### Error Handling
+
+All API error responses follow a standardized format to ensure consistency across endpoints:
+
+```typescript
+interface ErrorResponse {
+  message: string;        // Summary of the error
+  errors: ValidationError[];  // Array of field-specific validation errors
+}
+
+interface ValidationError {
+  field: string;          // Field name (for validation errors)
+  message: string;        // Field-specific error message
+}
+```
+
+**Error Response Rules**:
+- All error responses use the `ErrorResponse` format with `message` and `errors` fields
+- For validation errors: `message` provides a summary (e.g., "Validation failed"), `errors` contains field-specific details
+- For non-validation errors: `message` describes the error, `errors` is an empty array
+- HTTP status codes indicate error categories:
+  - `400`: Bad Request (validation errors, invalid input)
+  - `401`: Unauthorized (authentication required or failed)
+  - `403`: Forbidden (authorization failure)
+  - `404`: Not Found (resource doesn't exist)
+  - `402`: Payment Required (payment processing failure)
+  - `500`: Internal Server Error (unexpected server errors)
+
+**Implementation**:
+- Error types are defined in `src/types/error.ts`
+- Routes construct `ErrorResponse` objects before sending error responses
+- Services return validation errors as arrays of `ValidationError` objects
+- Middleware (e.g., authentication) uses the same error format
+
+### Data Storage and Seed Data (TR6)
+
+Persistence uses a JSON file-system store under `/db` at project root:
+
+- **Location**: `db/` folder. Entity files: `activities.json`, `bookings.json`, `users.json`, `payments.json`.
+- **Seed data**: `db/seed/activities.json` holds sample activities. On startup, the app loads seed data (at least activities) so there are predefined activities for development, demos, and tests. Seed files are read-only; runtime writes go to the entity files in `db/`.
+- **Load strategy**: Read JSON on startup; optionally merge or replace in-memory state from seed. Services continue to use repository-style access; the store implementation hides whether data comes from memory, seed, or persisted JSON.
+- **Write strategy**: On create/update/delete, persist changes to the corresponding `db/*.json` file. Use atomic write patterns (e.g. write to temp then rename) to avoid corruption.
+
+The system uses a repository pattern with `JsonRepository` implementation that provides file-based persistence while maintaining in-memory Maps for fast access during runtime.
 
 ## Architecture Decisions Record (ADR)
 
-### ADR 1: Use Express for REST API
-- **Decision**: Use Express 4.21 for HTTP routing and middleware.
+### ADR 1: Layered Architecture Pattern
+- **Decision**: Adopt a three-layer architecture (Routes → Services → Types) instead of MVC or hexagonal architecture
 - **Status**: Accepted
-- **Context**: The API needs a simple and stable REST framework.
-- **Consequences**: Low overhead and fast iteration for demo use.
+- **Context**: The project requires clear separation between HTTP handling and business logic. The layered approach simplifies testing, maintenance, and aligns with Express.js patterns. The team has existing skills in this pattern.
+- **Consequences**: 
+  - Clear separation of concerns improves maintainability
+  - Services can be tested independently of HTTP layer
+  - Easy to swap data storage implementation later
+  - Slight overhead in request/response transformation
 
-### ADR 2: In-memory data stores
-- **Decision**: Store rockets and launches in process memory.
+### ADR 2: In-Memory Data Storage (Initial)
+- **Decision**: Use in-memory Map-based storage for initial implementation instead of a database
 - **Status**: Accepted
-- **Context**: The system is a training demo with no persistence needs.
-- **Consequences**: Data resets on restart and no concurrency guarantees.
+- **Context**: This is a training/demo project. In-memory storage simplifies setup, eliminates database dependencies, and allows focus on business logic and API design. Data persistence is not a requirement for the initial scope.
+- **Consequences**:
+  - No database setup required, faster development
+  - Data lost on server restart (acceptable for demo)
+  - Easy migration to database later by replacing service implementations
+  - Not suitable for production without persistence layer
 
-### ADR 3: Validation in shared utilities
-- **Decision**: Centralize validation helpers in `utils/validation.ts`.
+### ADR 3: JWT-based Authentication
+- **Decision**: Use JWT tokens for authentication instead of session-based or OAuth
 - **Status**: Accepted
-- **Context**: Consistent rules are needed across routes and services.
-- **Consequences**: Easier reuse and uniform error responses.
+- **Context**: JWT provides stateless authentication suitable for REST APIs. Simple to implement, no server-side session storage needed, and tokens can be validated without database lookups.
+- **Consequences**:
+  - Stateless authentication scales well
+  - Tokens can be validated without database queries
+  - Token revocation requires additional mechanism (not in initial scope)
+  - Tokens must be stored securely on client side
 
-### ADR 4: Playwright for e2e tests
-- **Decision**: Use Playwright for API acceptance tests.
+### ADR 4: Mock Payment Gateway
+- **Decision**: Integrate with a mock payment gateway instead of real payment providers
 - **Status**: Accepted
-- **Context**: The project needs scenario-driven validation of endpoints.
-- **Consequences**: Reliable e2e coverage with clear assertions.
+- **Context**: Real payment integration requires merchant accounts, compliance, and complex error handling. Mock gateway allows testing payment flows without external dependencies and costs.
+- **Consequences**:
+  - No real payment processing costs during development
+  - Payment flows can be tested without external services
+  - Easy to simulate success/failure scenarios
+  - Must be replaced with real gateway for production use
 
-### ADR 5: Vitest for unit testing
-- **Decision**: Use Vitest for service and utility layer unit tests.
+### ADR 5: TypeScript with Strict Typing
+- **Decision**: Use TypeScript with strict mode and avoid `any` types
 - **Status**: Accepted
-- **Context**: ES modules + TypeScript require zero-config ESM support; Playwright covers E2E.
-- **Consequences**: Fast TDD cycles, colocated tests improve discoverability, mocking for pure business logic validation.
+- **Context**: TypeScript provides type safety, better IDE support, and catches errors at compile time. Strict mode enforces best practices and prevents common pitfalls.
+- **Consequences**:
+  - Compile-time type checking reduces runtime errors
+  - Better developer experience with autocomplete and refactoring
+  - Requires type definitions for all data structures
+  - Slightly longer compilation time
+
+### ADR 6: JSON File-System Store at `/db` with Seed Data
+- **Decision**: Use JSON files in a `/db` folder at project root as the persistence layer, with seed (sample) data for activities so the app starts with predefined activities.
+- **Status**: Implemented
+- **Context**: PRD TR6. Need simple, dependency-free persistence for dev/demos. File-system JSON avoids a DB setup while enabling persistence across restarts. Seed data ensures activities exist out of the box for booking flows and E2E tests.
+- **Consequences**:
+  - No database dependency; `db/` is versionable and portable
+  - Seed data in `db/seed/` provides consistent baseline for development and testing
+  - Single-writer workload; not suitable for concurrent multi-process writes
+  - Atomic writes (temp + rename) recommended to avoid partial writes
+  - Migration path: introduce a repository layer that reads/writes JSON; swap from in-memory to file-based implementation
+
+### ADR 7: Runtime Security Mode (Secured/Open)
+- **Decision**: Introduce a runtime `SECURITY_MODE` configuration with two values: `secured` (default) and `open`.
+- **Status**: Implemented
+- **Context**: Workshops and demos require reduced client setup friction while preserving deterministic user-bound behavior for bookings and payments.
+- **Consequences**:
+  - `secured` mode preserves existing JWT-protected route behavior
+  - `open` mode bypasses client authentication and impersonates the first persisted user
+  - Startup fails fast in `open` mode when no users are available in `db/users.json`
+  - Authentication middleware keeps one contract for downstream routes by always attaching a user context
+
+### ADR 8: API DTO Compatibility Boundary
+- **Decision**: Treat `client/` DTOs as the canonical external API transport contract and map internal domain entities to those DTOs at route boundaries.
+- **Status**: Implemented
+- **Context**: Internal persistence uses string ids (`resource-<n>`) and service-level entities with fields not always matching frontend expectations. Contract drift caused integration friction and client-side remapping.
+- **Consequences**:
+  - Response payloads now expose numeric identifiers (`id`, `userId`, `activityId`) to match client types
+  - Route inputs accept numeric identifiers and normalize to internal resource ids
+  - Booking responses expose nested `payment` shape compatible with client contract
+  - Internal entities and persistence schema remain unchanged, reducing migration risk
+  - DTO contract verification is enforced by E2E tests (`tests/dto-alignment.spec.ts`)

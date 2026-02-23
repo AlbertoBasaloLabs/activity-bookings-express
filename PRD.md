@@ -47,12 +47,12 @@ A backend API system for managing activity bookings where registered users can d
 ### FR2: Activity Management
 - **Description**: System supports creating, reading, updating, and deleting activities with properties including name, slug, price, date, duration, location, participant thresholds (min/max), and status.
 - **Priority**: High
-- **Status**: Completed
+- **Status**: InProgress
 
 ### FR3: Activity Status Lifecycle
 - **Description**: Activities transition through statuses: draft → published → confirmed → done or cancelled, with appropriate business rules for each transition.
 - **Priority**: High
-- **Status**: Completed
+- **Status**: InProgress
 
 ### FR4: Booking Creation with Capacity Validation
 - **Description**: Users can book activities, but the system prevents bookings that would exceed available seats (maxParticipants minus existing bookings).
