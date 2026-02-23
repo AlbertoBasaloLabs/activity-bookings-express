@@ -2,7 +2,7 @@
 
 - **Reference**: [PRD](/PRD.md) FR2, FR3, TR1, TR4.
 - **Issue**: TBD
-- **Status**: Planned
+- **Status**: Released
 
 ## Problem Description
 

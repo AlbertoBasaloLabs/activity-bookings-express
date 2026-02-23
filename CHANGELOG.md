@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] - 2026-02-23
+
+### Changed
+- `PUT /activities/:id` now supports partial updates; omitted mutable fields retain current values
+- `status` can be updated through `PUT /activities/:id` when the requested transition is valid per lifecycle rules
+
+### Added
+- Integration tests for partial `PUT` compatibility, status transition validation, and `401/403/404` behavior (`tests/put-partial-updates.spec.ts`)
+
+### Documentation
+- Clarified update semantics in README: partial `PUT` support, lifecycle validation for `status` in `PUT`, and continued availability of `PATCH /activities/:id/status`
+
 ## [1.12.0] - 2026-02-20
 
 ### Added

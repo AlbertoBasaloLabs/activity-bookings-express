@@ -69,6 +69,12 @@ See detailed behavior and acceptance criteria in [specs/](specs/).
   - `status`: `none | pending | paid | refunded`
 - Date fields are emitted as ISO strings suitable for client-side `Date` parsing.
 
+## Update semantics
+
+- `PUT /activities/:id` accepts partial payloads; omitted fields keep their current values.
+- When `status` is sent in `PUT`, lifecycle transition rules are still enforced.
+- `PATCH /activities/:id/status` remains available for explicit status-transition workflows.
+
 
 ---
 
